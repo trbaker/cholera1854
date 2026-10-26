@@ -1,0 +1,1436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-HZWNB3WHS6"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-HZWNB3WHS6');
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Map a Historic Cholera Outbreak</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://js.arcgis.com/4.30/esri/themes/light/main.css">
+<style>
+/* GeoInquiries Lab — engine stylesheet (from "A Nation Divided", final state).
+   Theme tokens below can be overridden per activity via ACTIVITY.theme. */
+:root{
+  --ink:#1B2A3C;
+  --ink-soft:#4A5768;
+  --sheet:#EEF1EC;
+  --panel:#FFFFFF;
+  --rule:#CFD6D0;
+  --header:#1B2A3C;        /* header background (Nation Divided: navy) */
+  --header-rule:#B4842D;   /* header bottom border */
+  --accent:#1B2A3C;        /* primary buttons, active layer state, mode pill active */
+  --accent-hover:#2A3E56;
+  --brass:#B4842D;
+  --brass-text:#8A6520;    /* 5.3:1 on white, for brass-coloured text */
+  --brass-light:#D9A84A;   /* 6.7:1 under navy text, for badge and toast fills */
+  --ok:#2F7D4F;
+  --ok-soft:#DDEFE3;
+  --warn:#A83A2A;
+  --warn-soft:#F5DCD7;
+  --border-soft:#F5EBC6;
+  --callout:#F3F1E8;
+  --serif:"Old Standard TT", Georgia, "Times New Roman", serif;
+  --sans:"Source Sans 3", "Segoe UI", Helvetica, Arial, sans-serif;
+  --rail:420px;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0}
+body{
+  font-family:var(--sans);font-size:16px;line-height:1.5;color:var(--ink);background:var(--sheet);
+  display:flex;flex-direction:column;min-height:100vh;
+}
+a{color:#2E5E9E}
+button{font:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,[tabindex]:focus-visible{
+  outline:3px solid var(--brass);outline-offset:2px;
+}
+.visually-hidden{
+  position:absolute!important;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;
+  clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0;
+}
+
+/* ---------- Top bar ---------- */
+header.topbar{
+  position:relative;
+  display:flex;align-items:center;gap:14px;
+  padding:8px 236px 8px 16px;   /* right padding reserves the corner for the mode switch */
+  background:var(--header);color:#fff;
+  border-bottom:4px solid var(--header-rule);
+  flex-wrap:wrap;
+}
+.topbar .logo{display:block;flex:0 0 auto;line-height:0;border-radius:8px}
+.topbar .logo img{width:48px;height:48px;display:block}
+.topbar .logo:focus-visible{outline:3px solid var(--brass);outline-offset:2px}
+.topbar h1{font-family:var(--serif);font-weight:700;font-size:1.35rem;line-height:1.1;margin:0;letter-spacing:.01em}
+.topbar h1 small{display:block;font-family:var(--sans);font-weight:400;font-size:.8rem;opacity:.85;margin-top:2px}
+.hud{margin-left:auto;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.score{font-family:var(--serif);font-size:1.5rem;line-height:1;display:flex;align-items:baseline;gap:8px}
+.score span{font-family:var(--sans);font-size:.8rem;opacity:.9}
+.badges{display:flex;gap:6px}
+.badge{
+  width:34px;height:34px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.35);
+  display:grid;place-items:center;font-size:.85rem;
+  font-family:var(--serif);font-weight:700;
+  color:rgba(255,255,255,.65);
+  position:relative;
+}
+.badge.earned{background:var(--brass-light);border-color:var(--brass-light);color:var(--ink)}
+/* Mode switch: pinned to the upper-right corner, styled as a light pill so it
+   reads as a mode selector rather than one of the outlined action buttons. */
+.mode-switch{
+  position:absolute;top:10px;right:20px;z-index:2;
+  display:flex;padding:3px;gap:2px;
+  background:var(--sheet);border-radius:999px;
+  box-shadow:0 1px 3px rgba(0,0,0,.35), inset 0 0 0 1px rgba(27,42,60,.15);
+}
+.mode-switch button{
+  background:transparent;color:var(--ink);border:0;border-radius:999px;
+  padding:5px 16px;font-size:.9rem;font-weight:700;letter-spacing:.01em;line-height:1.3;
+}
+.mode-switch button[aria-pressed="true"]{
+  background:var(--accent);color:#fff;
+  box-shadow:0 1px 2px rgba(0,0,0,.3);
+}
+.mode-switch button:hover:not([aria-pressed="true"]){background:rgba(27,42,60,.1)}
+.mode-switch button:focus-visible{outline:3px solid var(--brass);outline-offset:1px}
+.topbar .tools{display:flex;gap:6px;flex-wrap:wrap}
+.topbar .tools button{
+  background:transparent;color:#fff;border:1px solid rgba(255,255,255,.5);
+  padding:6px 12px;border-radius:4px;font-size:.9rem;
+}
+.topbar .tools button:hover{background:rgba(255,255,255,.14)}
+body.mode-explore .hud .score,
+body.mode-explore .hud .badges{display:none}
+body.mode-explore .rail{display:none}
+body.mode-explore .map-banner{display:none}
+body.mode-explore .tools #btnHelp,
+body.mode-explore .tools #btnSources,
+body.mode-explore .tools #btnTeacher,
+body.mode-explore .tools #btnReset{display:none}
+
+/* ---------- Main layout ---------- */
+main{flex:1;display:flex;min-height:0}
+.rail{
+  width:var(--rail);flex:0 0 var(--rail);background:var(--panel);border-right:1px solid var(--rule);
+  display:flex;flex-direction:column;min-height:0;
+}
+.rail-head{
+  display:flex;align-items:center;justify-content:space-between;padding:6px 12px 6px 16px;
+  border-bottom:1px solid var(--rule);background:#F7F8F6;font-family:var(--serif);font-weight:700;
+}
+.progress{display:grid;grid-template-columns:repeat(5,1fr);border-bottom:1px solid var(--rule)}
+.progress button{
+  background:none;border:0;border-bottom:4px solid transparent;padding:10px 4px 8px;font-size:.85rem;color:var(--ink-soft);
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+}
+.progress button b{font-family:var(--serif);font-size:1rem;color:var(--ink)}
+.progress button.current,.progress button[aria-current="step"]{border-bottom-color:var(--brass);color:var(--ink)}
+.progress button.done b::after{content:" ✓";color:var(--ok)}
+.progress button:disabled{opacity:.45;cursor:not-allowed}
+
+.mission{flex:1;overflow:auto;padding:22px 24px 30px}
+.mission h2{font-family:var(--serif);font-size:1.7rem;line-height:1.15;margin:0 0 4px;font-weight:700}
+.mission .question-head{font-family:var(--serif);font-style:italic;font-size:1.15rem;color:var(--ink-soft);margin:0 0 16px}
+.mission p{margin:0 0 12px;max-width:62ch}
+.steps{margin:0 0 16px;padding:0;list-style:none}
+.steps li{padding:8px 10px 8px 14px;border-left:3px solid var(--rule);margin-bottom:6px;background:#F7F8F6}
+.steps li.active{border-left-color:var(--brass);background:var(--border-soft)}
+.steps li.done{border-left-color:var(--ok);color:var(--ink-soft)}
+.task{border:1px solid var(--rule);border-radius:6px;padding:16px;margin:0 0 14px;background:#fff}
+.task h3{font-family:var(--serif);font-size:1.15rem;margin:0 0 8px;font-weight:700}
+.task .pts{float:right;font-size:.8rem;color:var(--brass-text);font-weight:600}
+.choices{display:flex;flex-direction:column;gap:8px;margin:10px 0}
+.choices button,.choices label{
+  text-align:left;background:#fff;border:1px solid #7F8A97;border-radius:6px;padding:10px 12px;color:var(--ink);
+  line-height:1.35;display:flex;gap:10px;align-items:flex-start;
+}
+.choices button:hover{border-color:var(--ink);background:#F7F8F6}
+.choices button.correct{border-color:var(--ok);background:var(--ok-soft)}
+.choices button.wrong{border-color:var(--warn);background:var(--warn-soft)}
+.choices button:disabled{cursor:default}
+.choices input[type=checkbox]{margin-top:4px}
+.choices.inline{flex-direction:row;flex-wrap:wrap}
+.choices.inline button{padding:6px 12px}
+.feedback{margin-top:10px;padding:10px 12px;border-radius:6px;font-size:.95rem;background:#F7F8F6;border:1px solid var(--rule)}
+.feedback.good{background:var(--ok-soft);border-color:var(--ok)}
+.feedback.bad{background:var(--warn-soft);border-color:var(--warn)}
+.primary{background:var(--accent);color:#fff;border:0;border-radius:6px;padding:10px 16px;font-weight:600}
+.primary:hover{background:var(--accent-hover)}
+.primary:disabled{background:#9AA3AE;cursor:not-allowed}
+.secondary{background:#fff;color:var(--ink);border:1px solid var(--ink);border-radius:6px;padding:9px 14px;font-weight:600}
+.secondary:hover{background:#F7F8F6}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+input[type=number],input[type=text],textarea,select.answer{font:inherit;padding:8px 10px;border:1px solid var(--rule);border-radius:6px;width:100%;background:#fff;color:var(--ink)}
+input[type=number]{width:120px}
+textarea{min-height:130px;resize:vertical}
+.hint{font-size:.9rem;color:var(--ink-soft)}
+.chip{display:inline-block;padding:2px 9px;border-radius:12px;font-size:.8rem;font-weight:600;background:#EDEFEA;color:var(--ink)}
+.name-card{border-left:4px solid var(--brass);padding:10px 14px;background:#FBFAF6;margin-top:10px}
+.name-card h4{font-family:var(--serif);margin:0 0 4px;font-size:1.1rem}
+.name-card .meta{font-size:.9rem;color:var(--ink-soft);margin-bottom:6px}
+.order-list{list-style:none;padding:0;margin:10px 0}
+.order-list li{display:flex;align-items:center;gap:8px;border:1px solid var(--rule);border-radius:6px;padding:8px 10px;margin-bottom:6px;background:#fff}
+.order-list li .num{font-family:var(--serif);font-weight:700;width:1.5em;color:var(--brass-text)}
+.order-list li .mv{margin-left:auto;display:flex;gap:4px}
+.order-list li .mv button{border:1px solid var(--rule);background:#fff;border-radius:4px;padding:2px 8px}
+.order-list li.right{border-color:var(--ok);background:var(--ok-soft)}
+.order-list li.wrong{border-color:var(--warn);background:var(--warn-soft)}
+.summary-box{background:#F7F8F6;border:1px solid var(--rule);border-radius:6px;padding:14px;margin-top:10px}
+.summary-box dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:4px 12px}
+.summary-box dt{color:var(--ink-soft)}
+.summary-box dd{margin:0;font-weight:600}
+.callout{background:var(--callout);border-left:4px solid var(--accent);padding:10px 14px;border-radius:0 6px 6px 0;margin:0 0 14px}
+.callout b{font-family:var(--serif)}
+
+/* ---------- Map ---------- */
+.mapwrap{flex:1;position:relative;min-width:0;min-height:0}
+#viewDiv{position:absolute;inset:0}
+.maptools{
+  position:absolute;top:12px;right:12px;z-index:5;
+  display:flex;flex-direction:column;gap:6px;align-items:flex-end;
+}
+.maptools button{
+  background:#fff;border:1px solid var(--rule);border-radius:6px;padding:6px 10px;font-size:.9rem;
+  box-shadow:0 1px 4px rgba(0,0,0,.15);color:var(--ink);
+}
+.maptools select{
+  background:#fff;border:1px solid var(--rule);border-radius:6px;padding:6px 10px;font-size:.9rem;
+  box-shadow:0 1px 4px rgba(0,0,0,.15);color:var(--ink);font-family:var(--sans);min-width:220px;
+}
+.maptools .measure-btn{
+  width:32px;height:32px;padding:0;border-radius:2px;display:grid;place-items:center;
+  font-size:16px;color:#6e6e6e;background:#fff;border:1px solid rgba(110,110,110,.3);
+}
+.maptools .measure-btn:hover{background:#f3f3f3;color:#2e2e2e}
+.maptools .measure-btn.on{background:#e8e8e8;color:#151515;border-color:#a8a8a8;box-shadow:inset 0 0 0 1px #a8a8a8}
+.layers-panel{
+  background:rgba(255,255,255,.97);border:1px solid var(--rule);border-radius:6px;
+  box-shadow:0 1px 4px rgba(0,0,0,.15);min-width:220px;overflow:hidden;
+}
+.layers-head{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:6px 8px 6px 12px;background:var(--accent);color:#fff;font-family:var(--serif);font-weight:700;
+}
+.layers-head button{
+  background:transparent;color:#fff;border:1px solid rgba(255,255,255,.45);border-radius:4px;
+  padding:2px 8px;font-size:.8rem;box-shadow:none;
+}
+.panel-body{padding:8px}
+.panel-body.collapsed{display:none}
+.bookmarks-panel select{width:100%;min-width:0;box-shadow:none}
+.layers-list{list-style:none;margin:0;padding:6px 8px}
+.layers-list.collapsed{display:none}
+.layers-list li label{
+  display:flex;align-items:center;gap:8px;padding:5px 4px;border-radius:4px;cursor:pointer;font-size:.92rem;
+}
+.layers-list li label:hover{background:#F2F4F0}
+.layers-list li label.unavailable{color:var(--ink-soft);font-style:italic}
+.layers-list input{width:16px;height:16px;margin:0;accent-color:var(--accent)}
+.legend{
+  position:absolute;left:12px;bottom:12px;z-index:5;
+  background:rgba(255,255,255,.97);border:1px solid var(--rule);border-radius:6px;
+  font-size:.85rem;min-width:200px;max-width:240px;overflow:hidden;
+  box-shadow:0 1px 4px rgba(0,0,0,.15);
+}
+.legend-head{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:6px 8px 6px 12px;background:var(--accent);color:#fff;font-family:var(--serif);font-weight:700;font-size:1rem;
+}
+.legend-head button{
+  background:transparent;color:#fff;border:1px solid rgba(255,255,255,.45);border-radius:4px;
+  padding:2px 8px;font-size:.8rem;
+}
+.legend-body{padding:8px 12px 10px;max-height:40vh;overflow:auto}
+.legend-body.collapsed{display:none}
+.legend-body:empty::before{content:"Turn on a layer to see its legend.";color:var(--ink-soft);font-style:italic}
+.legend h5{font-family:var(--serif);font-size:.95rem;margin:6px 0 4px}
+.legend h5:first-child{margin-top:0}
+.legend-body div{display:flex;align-items:center;gap:8px;margin:3px 0}
+.sw{width:16px;height:12px;border:1px solid rgba(0,0,0,.25);flex:0 0 auto}
+.sw.dot{width:12px;height:12px;border-radius:50%}
+.sw.sq{width:12px;height:12px;border-radius:1px}
+.sw.dia{width:12px;height:12px;transform:rotate(45deg)}
+.sw.tri{width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:12px solid #6E6E6E;background:transparent;border-top:0}
+.sw.line{border:0;border-top:3px dashed #2E5E9E;height:0}
+.sw.cross{border:0;background:transparent;font-weight:900;text-align:center;line-height:12px;font-size:16px}
+.sw.note{width:14px;height:14px;border-radius:3px;background:#fff;border:2px solid var(--accent)}
+.mapstatus{
+  position:absolute;right:12px;bottom:12px;z-index:5;font-size:.8rem;
+  background:rgba(255,255,255,.95);border:1px solid var(--rule);border-radius:6px;padding:5px 9px;max-width:300px;
+}
+.mapstatus.err{border-color:var(--warn);background:var(--warn-soft)}
+.mapstatus:empty{display:none}
+.map-banner{
+  position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:5;
+  background:var(--accent);color:#fff;padding:8px 14px;border-radius:6px;font-size:.95rem;
+  max-width:min(480px,55%);text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.25);
+  display:none;
+}
+.map-banner.show{display:block}
+.map-banner b{font-family:var(--serif)}
+.map-error{position:absolute;inset:0;display:none;place-items:center;background:var(--sheet);z-index:4;padding:20px}
+.map-error.show{display:grid}
+.map-error div{max-width:520px;background:#fff;border:1px solid var(--rule);border-radius:8px;padding:20px}
+
+/* ---------- Modal ---------- */
+.modal-back{position:fixed;inset:0;background:rgba(27,42,60,.55);z-index:100;display:none;place-items:center;padding:20px}
+.modal-back.show{display:grid}
+.modal{background:#fff;border-radius:8px;max-width:760px;width:100%;max-height:90vh;overflow:auto;padding:26px 28px;box-shadow:0 10px 40px rgba(0,0,0,.35)}
+.modal h2{font-family:var(--serif);margin:0 0 10px;font-size:1.6rem}
+.modal h3{font-family:var(--serif);margin:18px 0 6px;font-size:1.15rem}
+.modal p,.modal li{max-width:70ch}
+.modal .close{float:right}
+.modal table{border-collapse:collapse;width:100%;font-size:.9rem}
+.modal td,.modal th{border-bottom:1px solid var(--rule);padding:6px 8px;text-align:left;vertical-align:top}
+.modal code{font-size:.85em;word-break:break-all}
+.modal .modal-footer{margin-top:22px;border-top:1px solid var(--rule);padding-top:14px;text-align:center}
+.modal .modal-footer p{max-width:none;margin:0 0 10px}
+.modal .modal-footer p.footer-left{text-align:left;margin-bottom:6px}
+.modal .modal-footer p.footer-left + .policy-links{margin-top:14px}
+.modal .policy-links{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 18px;margin:0 0 18px;font-size:.95rem}
+.modal .cc-badge{text-align:center;margin:0}
+.modal .cc-badge a{display:inline-block;line-height:0}
+.modal .cc-badge img{width:88px;height:31px}
+.toast{
+  position:fixed;left:50%;transform:translateX(-50%);bottom:24px;z-index:120;
+  background:var(--brass-light);color:var(--ink);font-weight:700;padding:10px 18px;border-radius:24px;
+  box-shadow:0 4px 16px rgba(0,0,0,.3);opacity:0;transition:opacity .25s;pointer-events:none;
+  font-family:var(--serif);font-size:1.05rem;
+}
+.toast.show{opacity:1}
+
+@media (max-width: 900px){
+  header.topbar{padding-right:20px;padding-top:50px}
+  .mode-switch{top:10px;right:12px}
+  main{flex-direction:column}
+  .rail{width:auto;flex:1 1 auto;border-right:0;border-top:1px solid var(--rule);order:2;max-height:55vh}
+  .mapwrap{order:1;height:45vh;flex:0 0 45vh}
+  .topbar h1{font-size:1.1rem}
+  .legend{max-width:180px;font-size:.78rem}
+}
+@media (prefers-reduced-motion: reduce){ .toast{transition:none} }
+
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a class="logo" id="logoLink" href="https://trbaker.github.io/geoinquiries/" target="_blank" rel="noopener"><img id="logoImg" src="data:image/png;base64,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" alt="GeoInquiries 2.0" width="48" height="48"></a>
+  <h1 id="appTitle">Map a Historic Cholera Outbreak<small id="appSubtitle">Soho, London, 1854 · based on the Learn ArcGIS lesson by Esri</small></h1>
+  <div class="mode-switch" role="group" aria-label="Map mode">
+    <button type="button" id="modeMission" aria-pressed="true">GeoInquiry</button>
+    <button type="button" id="modeExplore" aria-pressed="false">Explore</button>
+  </div>
+  <div class="hud">
+    <div class="score"><span id="scoreVal">0</span> <span>points</span></div>
+    <div class="badges" id="badges" role="list" aria-label="Section badges"></div>
+    <div class="tools">
+      <button id="btnHelp" type="button">How to play</button>
+      <button id="btnSources" type="button">Sources</button>
+      <button id="btnTeacher" type="button">Teacher notes</button>
+      <button id="btnReset" type="button">Reset</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <aside class="rail" aria-label="GeoInquiry">
+    <div class="rail-head"><span>GeoInquiry</span></div>
+    <nav class="progress" id="progressNav" aria-label="GeoInquiry progress"></nav>
+    <section class="mission" id="mission" aria-live="polite"></section>
+  </aside>
+
+  <section class="mapwrap" aria-label="Map">
+    <div id="viewDiv"></div>
+    <div class="map-banner" id="mapBanner"></div>
+    <div class="maptools" id="mapTools">
+      <div class="layers-panel bookmarks-panel" id="bookmarksPanel" hidden>
+        <div class="layers-head"><span>Bookmarks</span><button type="button" id="bookmarksToggle" aria-expanded="true" aria-controls="bookmarksBody">Hide</button></div>
+        <div class="panel-body" id="bookmarksBody"><select id="bookmarks" aria-label="Bookmarks"></select></div>
+      </div>
+      <div class="layers-panel" id="layersPanel">
+        <div class="layers-head"><span>Layers</span><button type="button" id="layersToggle" aria-expanded="true" aria-controls="layersList">Hide</button></div>
+        <ul class="layers-list" id="layersList"></ul>
+      </div>
+      <button type="button" id="btnMeasure" class="measure-btn" title="Measure distance" aria-label="Measure distance" aria-pressed="false" hidden><span class="esri-icon-measure-line" aria-hidden="true"></span></button>
+    </div>
+    <div class="legend" id="legendBox">
+      <div class="legend-head"><span>Legend</span><button type="button" id="legendToggle" aria-expanded="true" aria-controls="legend">Hide</button></div>
+      <div class="legend-body" id="legend"></div>
+    </div>
+    <div class="mapstatus" id="mapStatus" role="status">Loading map</div>
+    <div class="map-error" id="mapError">
+      <div>
+        <h3 style="font-family:var(--serif);margin-top:0">The map could not load</h3>
+        <p>This app loads the ArcGIS Maps SDK for JavaScript from <code>js.arcgis.com</code> and data from ArcGIS Online. Check that your network allows those sites, then reload. The GeoInquiry questions still work without the map, but map-based tasks will be skipped.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="modal-back" id="modalBack" role="dialog" aria-modal="true">
+  <div class="modal" id="modalBody"></div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="https://js.arcgis.com/4.30/"></script>
+<script>
+/* =====================================================================
+   Map a Historic Cholera Outbreak (Soho, London, 1854)
+   GeoInquiries Lab activity, converted from the Learn ArcGIS lesson
+   "Map a historic cholera outbreak" and its web map
+   8863ffcc86134abfac5573e96e0bf336 (Cholera Outbreak, 1854).
+   No ArcGIS account, sign-in or Save steps: every Map Viewer step
+   (layers, pop-ups, attribute table, Styles, Properties) is done in the app.
+   ===================================================================== */
+(function(){
+
+/* ---------- data ---------- */
+// Built-in copy of the Cholera Cases service (322 records, 578 deaths), used only if the live service fails.
+// [Deaths, Address, lon, lat] — verified against the live layer (counts by Deaths value and every address with 5+ deaths).
+const CASES=[[1,"69 Beak Street",-0.136785,51.51272],[1,"29 Kingly Street",-0.140034,51.513268],[3,"27 Heddon Street",-0.139875,51.511226],[1,"9 Poland Street",-0.13673,51.514183],[1,"31 Heddon Street",-0.139917,51.511275],[1,"55 Poland Street",-0.136689,51.513986],[2,"18 Fouberts Place",-0.139587,51.513538],[3,"43 Broadwick Street",-0.136732,51.513304],[1,"18 Kingly Street",-0.139682,51.512994],[1,"52 Broadwick Street",-0.13674,51.513364],[2,"18 Fouberts Place",-0.139587,51.513538],[1,"57 Poland Street",-0.136675,51.513967],[1,"1 Ramillies Place",-0.139479,51.515001],[3,"9 Poland Street",-0.13673,51.514183],[1,"34 Carnaby Street",-0.139344,51.514097],[1,"71 Beak Street",-0.136684,51.512754],[1,"24 Ganton Street",-0.139206,51.51294],[4,"43 Broadwick Street",-0.136732,51.513304],[1,"1 Heddon Street",-0.139421,51.510774],[4,"50 Broadwick Street",-0.136564,51.513407],[1,"33 Carnaby Street",-0.139186,51.513456],[2,"59 Poland Street",-0.13649,51.513701],[1,"19 Noel Street",-0.136485,51.514985],[1,"24 Ganton Street",-0.139206,51.51294],[1,"48 Beak Street",-0.136541,51.51274],[1,"31 Carnaby Street",-0.13932,51.513676],[1,"51 Lexington Street",-0.136506,51.513276],[1,"1 Ganton Street",-0.139274,51.512908],[2,"23 Ganton Street",-0.139257,51.512847],[1,"75 Beak Street",-0.136565,51.512795],[1,"29 Carnaby Street",-0.139113,51.513487],[1,"46 Broadwick Street",-0.136522,51.513418],[1,"1 Ganton Street",-0.139086,51.513001],[1,"23 Great Pulteney Street",-0.136467,51.512606],[8,"1 Kingly Court",-0.139162,51.512895],[1,"7 Poland Street",-0.136502,51.513856],[1,"41 Carnaby Street",-0.138968,51.513242],[1,"13 Bridle Lane",-0.136581,51.512199],[2,"4 Marlbrough Court",-0.139021,51.513358],[2,"75 Beak Street",-0.136565,51.512795],[2,"13 Ganton Street",-0.139029,51.51296],[5,"47 Lexington Street",-0.136376,51.513106],[1,"1 Ganton Street",-0.138887,51.513029],[2,"14 Darblay Street",-0.136457,51.51452],[1,"2 Marlbrough Court",-0.138972,51.513313],[1,"48 Berwick Street",-0.136321,51.515337],[1,"1 Lowndes Court",-0.138975,51.513572],[2,"1 Lexington Street",-0.136425,51.513298],[3,"10 Newburgh Street",-0.138812,51.513749],[1,"25 Great Pulteney Street",-0.136374,51.512492],[1,"13 Newburgh Street",-0.138789,51.513614],[1,"77 Beak Street",-0.136328,51.512885],[1,"10 Newburgh Street",-0.138812,51.513749],[1,"7 Newburgh Street",-0.138669,51.513603],[1,"1 Great Pulteney Street",-0.136019,51.512176],[1,"1 Ganton Street",-0.138565,51.513172],[2,"1 Lexington Street",-0.136425,51.513298],[1,"10 Ganton Street",-0.13845,51.513297],[1,"27 Great Pulteney Street",-0.136282,51.512379],[1,"48 Carnaby Street",-0.138394,51.512698],[1,"1 Portland Mews",-0.136195,51.514242],[1,"2 Newburgh Street",-0.138563,51.513504],[2,"43 Lexington Street",-0.136287,51.512999],[1,"1 Kingly Court",-0.138602,51.512383],[1,"1 Beak Street",-0.1364,51.512793],[3,"1 Ganton Street",-0.138565,51.513172],[1,"1 Great Pulteney Street",-0.136019,51.512176],[1,"10 Carnaby Street",-0.13832,51.512728],[1,"12 Darblay Street",-0.13626,51.514579],[1,"1 Ganton Street",-0.138565,51.513172],[1,"1 Broadwick Street",-0.136296,51.513424],[1,"1 Ganton Street",-0.138171,51.513329],[1,"27 Great Pulteney Street",-0.136282,51.512379],[2,"6 Ganton Street",-0.138282,51.513355],[1,"44 Lexington Street",-0.136211,51.513027],[4,"1 Ganton Street",-0.138565,51.513172],[2,"9 Portland Mews",-0.13616,51.514292],[1,"35 Marshall Street",-0.138205,51.513665],[1,"25 Darblay Street",-0.136166,51.514547],[1,"18 Marshall Street",-0.138235,51.513831],[3,"44 Lexington Street",-0.136211,51.513027],[3,"1 Ganton Street",-0.138171,51.513329],[2,"31 Broadwick Street",-0.136254,51.513436],[2,"35 Marshall Street",-0.138205,51.513665],[4,"32 Broadwick Street",-0.136186,51.513508],[2,"70 Broadwick Street",-0.137966,51.512927],[2,"10 Livonia Street",-0.136004,51.513974],[1,"4 Ganton Street",-0.138144,51.5134],[4,"27 Lexington Street",-0.136112,51.512816],[1,"70 Broadwick Street",-0.137966,51.512927],[1,"1 Great Pulteney Street",-0.136019,51.512176],[1,"50 Carnaby Street",-0.138152,51.512468],[1,"1 Livonia Street",-0.136044,51.514023],[2,"1 Ganton Street",-0.138171,51.513329],[1,"26 Darblay Street",-0.136082,51.514572],[1,"1 Broadwick Street",-0.136025,51.513541],[2,"16 Marshall Street",-0.13809,51.513642],[1,"37 Marshall Street",-0.138023,51.513429],[2,"33 Broadwick Street",-0.136158,51.513456],[1,"1 Upper John Street",-0.138022,51.511906],[1,"1 Great Pulteney Street",-0.136019,51.512176],[1,"51 Carnaby Street",-0.138083,51.512402],[5,"10 Livonia Street",-0.136004,51.513974],[1,"1 Carnaby Street",-0.138009,51.512432],[2,"1 Marshall Street",-0.13795,51.513332],[1,"27 Lexington Street",-0.136112,51.512816],[1,"1 Carnaby Street",-0.138009,51.512432],[1,"38 Lexington Street",-0.136117,51.512923],[4,"14 Marshall Street",-0.137944,51.513453],[1,"70 Berwick Street",-0.136034,51.514873],[3,"5 Great Marlborough Street",-0.13781,51.514713],[2,"1 Great Pulteney Street",-0.136019,51.512176],[1,"30 Broadwick Street",-0.13576,51.513621],[4,"1 Carnaby Street",-0.138009,51.512432],[1,"7 Silver Place",-0.135978,51.513002],[1,"40 Poland Street",-0.137695,51.515599],[1,"36 Lexington Street",-0.135958,51.512769],[1,"1 Marshall Street",-0.137809,51.513144],[1,"27 Darblay Street",-0.135998,51.514598],[3,"10 Marshall Street",-0.137928,51.513433],[3,"16 Ingestre Place",-0.135976,51.513501],[2,"11 Marshall Street",-0.137812,51.513277],[3,"1 Lexington Street",-0.135983,51.512692],[4,"1 Marshall Street",-0.137809,51.513144],[4,"10 Livonia Street",-0.136004,51.513974],[1,"11 Marshall Street",-0.137812,51.513277],[1,"1 Great Pulteney Street",-0.136019,51.512176],[2,"68 Broadwick Street",-0.137743,51.513057],[2,"1 Silver Place",-0.136121,51.512895],[1,"37 Beak Street",-0.137885,51.51228],[1,"7 Marshall Street",-0.13773,51.513167],[1,"7 Portland Mews",-0.135891,51.514062],[2,"4 Great Marlborough Street",-0.137686,51.514747],[4,"30 Broadwick Street",-0.13576,51.513621],[4,"7 Marshall Street",-0.13773,51.513167],[1,"7 Silver Place",-0.135978,51.513002],[2,"33 Golden Square",-0.137788,51.511757],[2,"1 Lexington Street",-0.135927,51.512637],[1,"49 Marshall Street",-0.137729,51.513027],[4,"35 Great Pulteney Street",-0.135864,51.511937],[1,"39 Beak Street",-0.137518,51.51243],[2,"1 Silver Place",-0.136121,51.512895],[1,"38 Beak Street",-0.13747,51.512384],[1,"1 Livonia Street",-0.135695,51.514132],[4,"1 Marshall Street",-0.137544,51.512924],[5,"30 Broadwick Street",-0.13576,51.513621],[3,"39 Beak Street",-0.137518,51.51243],[1,"6 Silver Place",-0.135794,51.513061],[2,"1 Broadwick Street",-0.137397,51.513164],[2,"14 Livonia Street",-0.135656,51.514083],[1,"1 Marshall Street",-0.137483,51.512726],[1,"1 Lexington Street",-0.135826,51.512538],[2,"1 Marshall Street",-0.137544,51.512924],[2,"9 Dufours Place",-0.137298,51.51348],[1,"14 Ingestre Place",-0.135797,51.513303],[3,"61 Broadwick Street",-0.13736,51.513114],[2,"2 Silver Place",-0.135571,51.513071],[2,"9 Dufours Place",-0.137298,51.51348],[2,"1 Great Pulteney Street",-0.136019,51.512176],[1,"7 Upper James Street",-0.137506,51.512385],[1,"24 Hollen Street",-0.135835,51.515153],[1,"30 Broadwick Street",-0.13576,51.513621],[1,"9 Dufours Place",-0.137298,51.51348],[2,"1 Livonia Street",-0.135695,51.514132],[2,"2 Marshall Street",-0.13741,51.512757],[1,"6 Silver Place",-0.135794,51.513061],[5,"19 Marshall Street",-0.138315,51.513929],[3,"14 Ingestre Place",-0.135797,51.513303],[1,"15 Dufours Place",-0.137219,51.513503],[2,"61 Broadwick Street",-0.13736,51.513114],[1,"1 Great Pulteney Street",-0.136019,51.512176],[1,"1 Marshall Street",-0.137278,51.512638],[1,"12 Ingestre Place",-0.135623,51.513101],[1,"1 Upper James Street",-0.137242,51.512236],[2,"5 Silver Place",-0.135611,51.513119],[1,"77 Berwick Street",-0.135672,51.514419],[3,"61 Broadwick Street",-0.13736,51.513114],[2,"34 Lexington Street",-0.135752,51.512567],[1,"1 Marshall Street",-0.137278,51.512638],[3,"1 Great Pulteney Street",-0.136019,51.512176],[1,"1 Upper James Street",-0.137242,51.512236],[4,"2 Silver Place",-0.135571,51.513071],[1,"21 Poland Street",-0.137183,51.514855],[1,"9 Dufours Place",-0.137298,51.51348],[2,"79 Berwick Street",-0.135579,51.514302],[2,"51 Beak Street",-0.137232,51.512559],[1,"34 Berwick Street",-0.135619,51.514476],[3,"1 Poland Street",-0.137017,51.514462],[3,"30 Broadwick Street",-0.13576,51.513621],[2,"13 Poland Street",-0.137041,51.514642],[1,"8 Ingestre Place",-0.135598,51.513069],[1,"61 Broadwick Street",-0.13736,51.513114],[2,"17 Wardour Mews",-0.135458,51.514687],[1,"53 Beak Street",-0.137008,51.512644],[1,"8 Ingestre Place",-0.135598,51.513069],[4,"47 Broadwick Street",-0.136927,51.513242],[1,"32 Berwick Street",-0.135513,51.514343],[2,"30 Bridle Lane",-0.136986,51.512573],[3,"20 Broadwick Street",-0.135377,51.513746],[3,"12 Poland Street",-0.136936,51.514483],[1,"1 Livonia Street",-0.135695,51.514132],[1,"32 Berwick Street",-0.135513,51.514343],[2,"54 Broadwick Street",-0.136902,51.513311],[5,"20 Broadwick Street",-0.135377,51.513746],[1,"67 Beak Street",-0.136885,51.512686],[1,"8 Ingestre Place",-0.135598,51.513069],[3,"53 Poland Street",-0.136851,51.514219],[3,"52 Broadwick Street",-0.13674,51.513364],[3,"82 Berwick Street",-0.135413,51.514099],[1,"183 Wardour Street",-0.135346,51.51516],[18,"45 Broadwick Street",-0.136829,51.513273],[3,"17 Noel Street",-0.136797,51.514913],[1,"1 Lexington Street",-0.13547,51.512198],[1,"1 Berwick Street",-0.135335,51.514125],[5,"83 Berwick Street",-0.135298,51.513965],[2,"8 Ingestre Place",-0.135598,51.513069],[1,"1 Hopkins Street",-0.135368,51.513531],[1,"1 Lexington Street",-0.135333,51.512082],[2,"1 Berwick Street",-0.135335,51.514125],[1,"1 Lexington Street",-0.135399,51.512231],[2,"1 Kemp Court",-0.135134,51.513522],[1,"13 Broadwick Street",-0.135336,51.513698],[1,"172 Wardour Street",-0.135221,51.515123],[7,"7 Ingestre Place",-0.134841,51.512851],[2,"1 Kemp Court",-0.13509,51.513475],[1,"13 Broadwick Street",-0.135336,51.513698],[2,"23 Berwick Street",-0.13522,51.513991],[1,"1 Hopkins Street",-0.135038,51.513167],[1,"1 Kemp Court",-0.135134,51.513522],[1,"1 Hopkins Street",-0.135038,51.513167],[1,"1 Lexington Street",-0.135146,51.512026],[3,"7 Ingestre Place",-0.134841,51.512851],[4,"1 Lexington Street",-0.135097,51.511913],[5,"1 Hopkins Street",-0.135038,51.513167],[2,"1 Kemp Court",-0.135134,51.513522],[1,"15 Hollen Street",-0.134926,51.515474],[1,"1 Broadwick Street",-0.13498,51.513899],[3,"1 Peter Street",-0.134828,51.512574],[1,"20 Peter Street",-0.134785,51.512526],[1,"28 Brewer Street",-0.134664,51.512047],[1,"7 Ingestre Place",-0.134841,51.512851],[3,"89 Berwick Street",-0.134806,51.513419],[1,"30 Brewer Street",-0.134836,51.511955],[1,"18 Berwick Street",-0.134834,51.513563],[1,"8 Broadwick Street",-0.134858,51.514],[1,"147 Wardour Street",-0.134802,51.514445],[2,"20 Peter Street",-0.134785,51.512526],[1,"2 Sheraton Street",-0.134594,51.514895],[1,"3 Duck Lane",-0.134674,51.513733],[1,"20 Peter Street",-0.134785,51.512526],[1,"20 Peter Street",-0.134785,51.512526],[2,"14 Berwick Street",-0.134679,51.51339],[1,"3 Duck Lane",-0.134674,51.513733],[1,"134 Wardour Street",-0.134682,51.514418],[1,"13 Berwick Street",-0.13464,51.513346],[1,"1 Hopkins Street",-0.13474,51.512746],[1,"145 Wardour Street",-0.134629,51.514229],[2,"11 Berwick Street",-0.134564,51.513258],[1,"7 Broadwick Street",-0.134565,51.514028],[9,"5 Greens Court",-0.134661,51.512583],[1,"10 Berwick Street",-0.134526,51.513215],[1,"4 Great Chapel Street",-0.134502,51.51587],[2,"7 Greens Court",-0.134466,51.512399],[1,"25 Great Windmill Street",-0.134774,51.511825],[1,"4 Great Chapel Street",-0.134502,51.51587],[1,"26 Brewer Street",-0.13456,51.512096],[2,"122 Wardour Street",-0.134444,51.514138],[2,"8 Berwick Street",-0.13445,51.513127],[1,"14 Berwick Street",-0.134679,51.51339],[1,"24 Brewer Street",-0.134409,51.512166],[1,"6 Greens Court",-0.134457,51.51249],[2,"116 Wardour Street",-0.134356,51.514049],[2,"7 Greens Court",-0.134466,51.512399],[1,"7 Berwick Street",-0.134412,51.513083],[1,"14 Ham Yard",-0.134475,51.511303],[8,"6 Berwick Street",-0.134374,51.51304],[1,"124 Wardour Street",-0.134513,51.514211],[1,"116 Wardour Street",-0.134356,51.514049],[2,"5 Berwick Street",-0.134336,51.512996],[1,"123 Wardour Street",-0.13426,51.513807],[2,"1 Saint Annes Court",-0.134288,51.514563],[1,"3 Berwick Street",-0.13426,51.512909],[1,"119 Wardour Street",-0.134155,51.513661],[5,"102 Wardour Street",-0.13418,51.51383],[1,"1 Saint Annes Court",-0.134288,51.514563],[2,"117 Wardour Street",-0.134135,51.513632],[1,"1 Flaxman Court",-0.134201,51.514046],[1,"109 Wardour Street",-0.133923,51.513313],[1,"41 Great Windmill Street",-0.134169,51.511102],[1,"19 A401",-0.134121,51.510649],[1,"98 Wardour Street",-0.134075,51.513684],[1,"18 Brewer Street",-0.13415,51.512286],[2,"29 Saint Annes Court",-0.133757,51.514705],[2,"113 Wardour Street",-0.134029,51.513473],[2,"1 Flaxman Court",-0.134201,51.514046],[1,"94 Wardour Street",-0.134001,51.513573],[1,"92 Wardour Street",-0.133948,51.513493],[1,"13 Brewer Street",-0.134183,51.512201],[1,"29 Saint Annes Court",-0.133757,51.514705],[1,"59 Rupert Street",-0.133671,51.512148],[1,"3 Richmond Buildings",-0.133315,51.514235],[1,"5 Walkers Court",-0.134018,51.512579],[1,"29 Saint Annes Court",-0.133757,51.514705],[5,"29 Saint Annes Court",-0.133757,51.514705],[1,"29 Peter Street",-0.13392,51.51286],[1,"29 Saint Annes Court",-0.133757,51.514705],[1,"29 Saint Annes Court",-0.133757,51.514705],[1,"6 Brewer Street",-0.133859,51.512407],[1,"4 Brewer Street",-0.133576,51.512534],[4,"29 Saint Annes Court",-0.133757,51.514705],[1,"29 Saint Annes Court",-0.133757,51.514705],[1,"1 Meard Street",-0.133421,51.513151],[2,"85 Dean Street",-0.133179,51.514566],[1,"85 Dean Street",-0.133179,51.514566],[1,"1 Rupert Street",-0.133237,51.51166],[2,"13 Meard Street",-0.133313,51.513133],[1,"1 Meard Street",-0.133421,51.513151],[1,"7 Meard Street",-0.13292,51.513266],[1,"2 Bourchier Street",-0.132529,51.513074],[1,"30 Rupert Street",-0.132755,51.511167],[1,"5 Rupert Court",-0.132691,51.511054],[2,"1 Marlbrough Court",-0.138595,51.51347]];
+const PUMPS=[
+  ["43 Broadwick Street",-0.136607,51.513324],["1 Great Titchfield Street",-0.139608,51.516342],["10 Ramillies Place",-0.139617,51.514883],
+  ["2 Berners Street",-0.135874,51.516074],["1 Newman Street",-0.134688,51.516264],["1 Carnaby Street",-0.139525,51.513844],
+  ["11 Warwick Street",-0.138192,51.511271],["9 Vigo Street",-0.139566,51.510154],["20 A4",-0.134007,51.510063],
+  ["52 Rupert Street",-0.133575,51.512103],["54 Dean Street",-0.131615,51.512321],["36 Bridle Lane",-0.135917,51.511503],
+  ["20 Eastcastle St",-0.137750,51.516627]
+];
+const BROAD=PUMPS[0];
+const TOTAL=CASES.reduce((n,c)=>n+c[0],0);
+const SNOW_URL="https://tiles.arcgis.com/tiles/j80Jz20at6Bi0thr/arcgis/rest/services/Snow_cholera_map_detailed/MapServer";
+const CASES_URL="https://services2.arcgis.com/j80Jz20at6Bi0thr/arcgis/rest/services/CholeraOutbreak1854/FeatureServer/0";
+const PUMPS_URL="https://services2.arcgis.com/j80Jz20at6Bi0thr/arcgis/rest/services/WaterPumps/FeatureServer/0";
+
+function metres(lon1,lat1,lon2,lat2){
+  const R=6371008.8, r=Math.PI/180, dl=(lon2-lon1)*r, dp=(lat2-lat1)*r;
+  const a=Math.sin(dp/2)**2+Math.cos(lat1*r)*Math.cos(lat2*r)*Math.sin(dl/2)**2;
+  return 2*R*Math.asin(Math.sqrt(a));
+}
+const deathsWithin=(m)=>CASES.reduce((n,c)=>n+(metres(c[2],c[3],BROAD[1],BROAD[2])<=m?c[0]:0),0);
+const RING_TARGET=(()=>{ for(let r=25;r<=400;r+=25) if(deathsWithin(r)>=0.75*TOTAL) return r; return 400; })();
+
+/* ---------- map helpers (Snow's scanned map, case styles) ---------- */
+let readyResolve; const mapReady=new Promise(r=>readyResolve=r);
+const CASE_COLOR="#B3261E";
+const HEAT_STOPS=[
+  {ratio:0,color:"rgba(98,20,140,0)"},{ratio:.08,color:"rgba(98,20,140,.55)"},{ratio:.3,color:"rgba(160,30,120,.75)"},
+  {ratio:.55,color:"rgba(215,48,39,.85)"},{ratio:.8,color:"rgba(252,141,40,.9)"},{ratio:1,color:"rgba(255,230,60,.95)"}
+];
+const STYLE_LEGENDS={
+  single:[{label:"Address with one or more deaths",color:CASE_COLOR,shape:"circle"}],
+  size:[{label:"Circle size = number of deaths (1 to 18)",color:CASE_COLOR,shape:"circle"}],
+  heatLocation:[{label:"Fewer cases close together",color:"#7A2A9A",shape:"square"},{label:"More cases close together",color:"#D7301F",shape:"square"},{label:"Densest cluster of cases",color:"#FFE13C",shape:"square"}],
+  heat:[{label:"Lower density of deaths",color:"#7A2A9A",shape:"square"},{label:"Higher density of deaths",color:"#D7301F",shape:"square"},{label:"Densest concentration of deaths",color:"#FFE13C",shape:"square"}]
+};
+const casesCfg=()=>window.GeoInquiry.map.cfg.cases;
+
+function renderers(kind){
+  const sym=(size)=>({type:"simple-marker",style:"circle",size:size||7,color:CASE_COLOR,outline:{color:"#fff",width:.8}});
+  if(kind==="size") return {type:"simple",symbol:sym(6),visualVariables:[{type:"size",field:"Deaths",stops:[{value:1,size:6},{value:5,size:15},{value:18,size:34}]}]};
+  // referenceScale pins the surface to the "Snow's map" view (about 1:9,000) so the yellow core looks the same at every zoom
+  if(kind==="heat"||kind==="heatLocation") return Object.assign({type:"heatmap",colorStops:HEAT_STOPS,radius:22,referenceScale:9028,minDensity:0},
+    kind==="heat"?{field:"Deaths",maxDensity:.035}:{maxDensity:.02});
+  return {type:"simple",symbol:sym(7)};
+}
+// Heat maps need a FeatureLayer. If the live service failed, the engine shows a GraphicsLayer copy; swap it for a client-side FeatureLayer.
+function casesLayer(api){
+  const M=api.map.modules, cur=api.map.layers.cases; if(!M||!cur) return null;
+  if(cur.type==="feature") return cur;
+  const src=CASES.map((c,i)=>new M.Graphic({geometry:new M.Point({longitude:c[2],latitude:c[3]}),attributes:{OBJECTID_1:i+1,Deaths:c[0],Address:c[1],__name:c[1]}}));
+  const fl=new M.FeatureLayer({source:src,objectIdField:"OBJECTID_1",geometryType:"point",spatialReference:{wkid:4326},title:"Cholera Cases",visible:cur.visible,
+    fields:[{name:"OBJECTID_1",type:"oid"},{name:"Deaths",type:"double"},{name:"Address",type:"string"},{name:"__name",type:"string"}],outFields:["*"],
+    renderer:renderers("single"),popupTemplate:{title:"{Address}",content:(ev)=>casePopup(ev.graphic.attributes)}});
+  const m=api.map.view.map, idx=m.layers.indexOf(cur); m.remove(cur); m.add(fl,Math.max(0,idx)); api.map.layers.cases=fl;
+  return fl;
+}
+function setCaseStyle(api,kind,props){
+  const L=casesLayer(api); if(!L) return;
+  L.renderer=renderers(kind);
+  if(props){ L.blendMode=props.blend||"normal"; L.opacity=props.opacity==null?1:props.opacity; }
+  casesCfg().legend=STYLE_LEGENDS[kind]; api.renderLegend();
+}
+// Re-apply the style a student has earned when they come back to a section (renderers aren't saved in progress)
+function restoreStyle(api,sectionId){
+  mapReady.then(()=>{
+    const styled=api.taskDone("expStyle"), props=api.taskDone("expProps");
+    if(sectionId==="ask"||sectionId==="acquire"||!styled) setCaseStyle(api,"single",{});
+    else setCaseStyle(api,"heat",props?{blend:"multiply",opacity:.75}:{});
+  });
+}
+function casePopup(a){
+  const n=+a.Deaths||0;
+  return `<b>${n}</b> ${n===1?"death":"deaths"} recorded at this address in the 1854 outbreak.`;
+}
+function addSnowMap(api){
+  // Snow's map is a cached tile service, which the engine doesn't build, so it is swapped in here.
+  return new Promise(resolve=>{
+    require(["esri/layers/TileLayer"],(TileLayer)=>{
+      const m=api.map.view.map, placeholder=api.map.layers.snow, idx=Math.max(0,m.layers.indexOf(placeholder));
+      const tl=new TileLayer({url:SNOW_URL,title:"Snow's Cholera Map",visible:placeholder?placeholder.visible:true});
+      if(placeholder) m.remove(placeholder); m.add(tl,idx); api.map.layers.snow=tl;
+      tl.load().then(resolve).catch(err=>{
+        console.warn("Snow's map unavailable",err&&err.message); m.remove(tl); delete api.map.layers.snow; api.map.unavailable.snow=true; api.map.cfg.snow.legend="none";
+        const cb=document.querySelector('#layersList input[data-layer="snow"]'); if(cb){ cb.checked=false; cb.disabled=true; cb.parentNode.classList.add("unavailable"); cb.parentNode.append(" (unavailable)"); }
+        api.renderLegend(); resolve();
+      });
+    },()=>resolve());
+  });
+}
+// Small helper for custom tasks: skip a map task cleanly when the map can't load
+function skipIfNoMap(api,id,f){
+  if(api.map.failed){ if(id&&!api.taskDone(id)) api.markTask(id,0); api.fb(f,false,"The map is not available, so this task is skipped."); return true; }
+  return false;
+}
+
+/* ---------- custom tasks ---------- */
+// Acquire: click a case to open its pop-up (the engine's click task reads Name fields; cases use Address)
+function caseClickTask(container,api,t){
+  const card=api.h(`<div class="task"><span class="pts">${t.points} pts</span><h3>${t.title}</h3><p>${t.text}</p><div class="feedback" hidden></div></div>`);
+  const f=card.querySelector(".feedback"); container.appendChild(card);
+  if(api.taskDone(t.id)){ api.fb(f,true,"Done. You opened a Cholera Cases pop-up."); return; }
+  if(skipIfNoMap(api,t.id,f)) return;
+  api.banner("<b>Map task:</b> click a red Cholera Cases point to open its pop-up");
+  api.map.clickHandler=async(ev)=>{
+    const L=api.map.layers.cases; if(!L||!L.visible){ api.fb(f,false,"Turn on the Cholera Cases layer first."); return; }
+    const hit=await api.map.view.hitTest(ev,{include:L});
+    const g=hit.results.find(r=>r.graphic&&r.graphic.attributes); if(!g) return;
+    const a=g.graphic.attributes, addr=a.Address||a.__name||"this address", n=+a.Deaths||0;
+    api.fb(f,true,`<b>${api.esc(addr)}</b>: ${n} ${n===1?"death":"deaths"}. Each pop-up gives the address and the number of deaths there, but not the cause.`);
+    api.markTask(t.id,t.points,"points"); api.banner(""); api.map.clickHandler=null;
+  };
+}
+
+// Acquire: attribute table, sortable by Deaths (Map Viewer's "Show table")
+function tableTask(container,api,t){
+  const card=api.h(`<div class="task"><span class="pts">${t.points} pts</span><h3>${t.title}</h3><p>${t.text}</p>
+    <div class="row" style="margin-bottom:8px"><button class="secondary" type="button" data-sort="desc">Sort Deaths: high → low</button><button class="secondary" type="button" data-sort="asc">Sort Deaths: low → high</button></div>
+    <div class="attr-table" tabindex="0" role="region" aria-label="Cholera Cases attribute table" style="max-height:260px;overflow:auto;border:1px solid var(--rule);border-radius:6px;background:#fff">
+      <table style="width:100%;border-collapse:collapse;font-size:14px"><caption class="visually-hidden">Cholera Cases: ${CASES.length} records</caption>
+        <thead><tr><th scope="col" style="text-align:left;position:sticky;top:0;background:var(--callout);padding:6px 8px">Address</th><th scope="col" aria-sort="none" style="text-align:right;position:sticky;top:0;background:var(--callout);padding:6px 8px">Deaths</th></tr></thead><tbody></tbody></table>
+    </div>
+    <p class="hint">${CASES.length} records · ${TOTAL} deaths in all. Select a row to zoom to it on the map.</p><div class="feedback" hidden></div></div>`);
+  const tb=card.querySelector("tbody"), f=card.querySelector(".feedback"), th=card.querySelectorAll("th")[1];
+  let rows=CASES.map((c,i)=>({i,d:c[0],a:c[1],x:c[2],y:c[3]}));
+  function draw(){
+    tb.innerHTML=rows.map(r=>`<tr data-i="${r.i}" tabindex="0" style="cursor:pointer;border-top:1px solid var(--rule)"><td style="padding:4px 8px">${api.esc(r.a)}</td><td style="padding:4px 8px;text-align:right">${r.d}</td></tr>`).join("");
+    tb.querySelectorAll("tr").forEach(tr=>{ const go=()=>{ const r=rows.find(x=>x.i===+tr.dataset.i); zoomTo(r); }; tr.addEventListener("click",go); tr.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); go(); } }); });
+  }
+  function zoomTo(r){
+    if(!api.map.ready) return; const M=api.map.modules, lyr=api.map.layers.__game; lyr.removeAll();
+    const p=new M.Point({longitude:r.x,latitude:r.y});
+    lyr.add(new M.Graphic({geometry:p,symbol:{type:"simple-marker",style:"circle",size:22,color:[0,0,0,0],outline:{color:"#FFD400",width:3}}}));
+    api.map.view.goTo({target:p,zoom:19}).catch(()=>{});
+  }
+  card.querySelectorAll("[data-sort]").forEach(b=>b.addEventListener("click",()=>{
+    const desc=b.dataset.sort==="desc"; rows.sort((p,q)=>desc?(q.d-p.d||p.a.localeCompare(q.a)):(p.d-q.d||p.a.localeCompare(q.a)));
+    th.setAttribute("aria-sort",desc?"descending":"ascending"); draw();
+    if(desc&&!api.taskDone(t.id)){ api.markTask(t.id,t.points,"points"); api.fb(f,true,"Sorted from most to fewest deaths. The top of the table shows the hardest-hit addresses."); }
+    else if(!desc&&!api.taskDone(t.id)) api.fb(f,false,"That puts the fewest deaths first. Sort the other way to see the hardest-hit addresses.");
+  }));
+  draw(); container.appendChild(card);
+  if(api.taskDone(t.id)) api.fb(f,true,"Done. Sort again any time.");
+}
+
+// Explore: Map Viewer's Styles pane — choose attribute, then style
+function stylesTask(container,api,t){
+  const card=api.h(`<div class="task"><span class="pts">${t.points} pts</span><h3>${t.title}</h3><p>${t.text}</p>
+    <div class="styles-pane" style="border:1px solid var(--rule);border-radius:6px;padding:10px 12px;background:#fff">
+      <p style="margin:0 0 6px"><b>1. Choose attributes</b></p>
+      <div class="choices inline" data-step="field"><button type="button" data-v="">Location only</button><button type="button" data-v="Deaths">+ Field: Deaths</button></div>
+      <p style="margin:10px 0 6px"><b>2. Pick a style</b></p>
+      <div class="choices inline" data-step="style"></div>
+      <div class="row" style="margin-top:10px"><button class="primary" type="button" data-done>Done</button></div>
+    </div><div class="feedback" hidden></div></div>`);
+  const f=card.querySelector(".feedback"), fieldEl=card.querySelector('[data-step="field"]'), styleEl=card.querySelector('[data-step="style"]');
+  let field=api.taskDone(t.id)?"Deaths":"", style=api.taskDone(t.id)?"heat":"single";
+  function drawStyles(){
+    const opts=field?[["size","Counts and Amounts (size)"],["heat","Heat map"]]:[["single","Location (single symbol)"],["heat","Heat map"]];
+    if(!opts.some(o=>o[0]===style)) style=opts[0][0];
+    styleEl.innerHTML=opts.map(([k,l])=>`<button type="button" data-v="${k}" aria-pressed="${k===style}" class="${k===style?"correct":""}">${l}</button>`).join("");
+    styleEl.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{ style=b.dataset.v; drawStyles(); apply(); }));
+    fieldEl.querySelectorAll("button").forEach(b=>{ const on=b.dataset.v===field; b.classList.toggle("correct",on); b.setAttribute("aria-pressed",String(on)); });
+  }
+  function apply(){
+    const kind=style==="heat"?(field?"heat":"heatLocation"):style;
+    mapReady.then(()=>setCaseStyle(api,kind));
+    const msg={single:"Every address gets the same red dot.",size:"Bigger circles now mean more deaths at that address.",heatLocation:"This heat map shows where case <i>locations</i> crowd together, but every address counts the same.",heat:"The heat map now weighs each address by its number of deaths."}[kind];
+    if(!api.taskDone(t.id)) api.fb(f,null,msg);
+  }
+  fieldEl.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{ field=b.dataset.v; drawStyles(); apply(); }));
+  card.querySelector("[data-done]").addEventListener("click",()=>{
+    if(api.taskDone(t.id)){ api.fb(f,true,"Done. Heat map weighted by Deaths is applied."); return; }
+    if(field==="Deaths"&&style==="heat"){ api.markTask(t.id,t.points,"points"); api.fb(f,true,"Heat map applied. Warmer colours show where deaths were most concentrated, counting both how close cases are and how many deaths each address had."); }
+    else if(style!=="heat") api.fb(f,false,"Pick the <b>Heat map</b> style before you select Done.");
+    else api.fb(f,false,"Your heat map counts every address the same. Add the <b>Deaths</b> field so addresses with more deaths weigh more.");
+  });
+  drawStyles(); container.appendChild(card);
+  if(skipIfNoMap(api,null,f)){ if(!api.taskDone(t.id)) api.markTask(t.id,0); return; }
+  if(api.taskDone(t.id)) api.fb(f,true,"Done. Heat map weighted by Deaths is applied.");
+  else apply();
+}
+
+// Explore: Map Viewer's Properties pane — blending and transparency for Cholera Cases
+function propertiesTask(container,api,t){
+  const done=api.taskDone(t.id);
+  const card=api.h(`<div class="task"><span class="pts">${t.points} pts</span><h3>${t.title}</h3><p>${t.text}</p>
+    <div style="border:1px solid var(--rule);border-radius:6px;padding:10px 12px;background:#fff">
+      <label for="blend_${t.id}"><b>Blending</b></label><br>
+      <select id="blend_${t.id}" style="font:inherit;padding:4px 6px;margin:4px 0 10px">
+        <option value="normal">Normal</option><optgroup label="Darken"><option value="multiply">Multiply</option><option value="darken">Darken</option></optgroup><optgroup label="Lighten"><option value="screen">Screen</option><option value="lighten">Lighten</option></optgroup><optgroup label="Contrast"><option value="overlay">Overlay</option></optgroup>
+      </select><br>
+      <label for="tr_${t.id}"><b>Transparency</b>: <span data-out>0</span>%</label><br>
+      <input type="range" id="tr_${t.id}" min="0" max="100" step="5" value="0" style="width:100%">
+    </div><div class="feedback" hidden></div></div>`);
+  const f=card.querySelector(".feedback"), sel=card.querySelector("select"), rng=card.querySelector("input"), out=card.querySelector("[data-out]");
+  if(done){ sel.value="multiply"; rng.value=25; }
+  out.textContent=rng.value;
+  container.appendChild(card);
+  if(skipIfNoMap(api,t.id,f)) return;
+  function apply(){
+    out.textContent=rng.value;
+    mapReady.then(()=>{ const L=casesLayer(api); if(L){ L.blendMode=sel.value; L.opacity=1-(+rng.value/100); } });
+    if(api.taskDone(t.id)) return;
+    if(!api.taskDone("expStyle")){ api.fb(f,null,"Finish the Styles task above (heat map with Deaths) first, then set Blending and Transparency."); return; }
+    if(sel.value==="multiply"&&+rng.value===25){ api.markTask(t.id,t.points,"points"); api.fb(f,true,"Blending is Multiply and transparency is 25%. Snow's streets and hash marks now show through the heat map."); }
+    else api.fb(f,null,`Blending: ${sel.options[sel.selectedIndex].text}, transparency ${rng.value}%. Set Blending to Multiply and Transparency to 25%.`);
+  }
+  sel.addEventListener("change",apply); rng.addEventListener("input",apply);
+  if(done){ api.fb(f,true,"Done. Blending is Multiply and transparency is 25%."); apply(); }
+}
+
+// Analyze: distance rings around the Broad Street pump
+function ringTask(container,api,t){
+  const card=api.h(`<div class="task"><span class="pts">${t.points} pts</span><h3>${t.title}</h3><p>${t.text}</p>
+    <label for="ring_${t.id}"><b>Ring radius</b>: <span data-r>100</span> m</label>
+    <input type="range" id="ring_${t.id}" min="25" max="400" step="25" value="100" style="width:100%">
+    <p data-stat style="margin:6px 0" aria-live="polite"></p>
+    <div class="row"><button class="primary" type="button">Lock in this radius</button></div><div class="feedback" hidden></div></div>`);
+  const f=card.querySelector(".feedback"), rng=card.querySelector("input"), rOut=card.querySelector("[data-r]"), stat=card.querySelector("[data-stat]"), btn=card.querySelector("button.primary");
+  container.appendChild(card); let ringGeom=null;
+  function draw(){
+    const r=+rng.value, n=deathsWithin(r); rOut.textContent=r;
+    stat.innerHTML=`Inside the ring: <b>${n}</b> of ${TOTAL} deaths (<b>${Math.round(100*n/TOTAL)}%</b>)`;
+    if(!api.map.ready) return; const M=api.map.modules, lyr=api.map.layers.__game; lyr.removeAll();
+    const p=new M.Point({longitude:BROAD[1],latitude:BROAD[2]});
+    const ring=M.geometryEngine.geodesicBuffer(p,r,"meters"); ringGeom=ring;
+    lyr.add(new M.Graphic({geometry:ring,symbol:{type:"simple-fill",color:[30,90,160,.10],outline:{color:[20,70,140,1],width:2.5,style:"dash"}}}));
+    lyr.add(new M.Graphic({geometry:p,symbol:{type:"simple-marker",style:"circle",size:10,color:[20,70,140,1],outline:{color:"#fff",width:1.5}}}));
+  }
+  rng.addEventListener("input",draw);
+  // when the slider is released, make sure the whole ring is on screen
+  rng.addEventListener("change",()=>{ if(api.map.ready&&ringGeom) api.map.view.goTo(ringGeom.extent.clone().expand(1.15)).catch(()=>{}); });
+  if(api.taskDone(t.id)){ rng.value=RING_TARGET; btn.disabled=true; api.fb(f,true,`Done. A ${RING_TARGET} m ring holds ${deathsWithin(RING_TARGET)} of ${TOTAL} deaths.`); }
+  draw();
+  if(!api.map.ready&&!api.map.failed) mapReady.then(draw);
+  if(api.map.ready) api.goTo({target:[BROAD[1],BROAD[2]],zoom:17});
+  btn.addEventListener("click",()=>{
+    const r=+rng.value, n=deathsWithin(r);
+    if(r===RING_TARGET){ btn.disabled=true; api.markTask(t.id,t.points,"points"); api.fb(f,true,`Correct. ${RING_TARGET} m is the smallest ring holding at least three-quarters of the deaths (${n} of ${TOTAL}, ${Math.round(100*n/TOTAL)}%). That is only a couple of minutes' walk from the pump.`); }
+    else if(n<0.75*TOTAL) api.fb(f,false,`${r} m holds only ${Math.round(100*n/TOTAL)}% of the deaths. Make the ring bigger.`);
+    else api.fb(f,false,`${r} m holds ${Math.round(100*n/TOTAL)}%, which is enough, but a smaller ring would do it too. Shrink it.`);
+  });
+}
+
+/* ---------- layers & bookmarks ---------- */
+const LAYERS=[
+  {key:"pumps",title:"Water Pumps",visible:false,url:PUMPS_URL,nameField:"Name",shape:"square",color:"#1F5FA8",size:11,legendLabel:"Public water pump",
+   popup:{title:"{Name}",content:(a)=>/broadwick/i.test(a.Name||"")?"The <b>Broad Street pump</b>. Broad Street has since been renamed Broadwick Street.":"A public water pump. Households without piped water carried drinking water home from pumps like this one."},
+   sourceNote:"13 public water pumps in and around Soho, from the lesson's web map.",
+   features:PUMPS.map(p=>({lon:p[1],lat:p[2],attrs:{Name:p[0]}}))},
+  {key:"cases",title:"Cholera Cases",visible:false,url:CASES_URL,nameField:"Address",shape:"circle",color:CASE_COLOR,size:7,legend:STYLE_LEGENDS.single,
+   popup:{title:"{Address}",content:(a)=>casePopup(a)},
+   sourceNote:"One point per address recorded on Snow's map, with the number of deaths (322 records, 578 deaths).",
+   features:CASES.map(c=>({lon:c[2],lat:c[3],attrs:{Deaths:c[0],Address:c[1]}}))},
+  {key:"snow",title:"Snow's Cholera Map",visible:true,
+   legend:[{label:"One cholera death (black bar)",color:"#1A1A1A",shape:"line"},{label:"Water pump (dot marked PUMP)",color:"#1A1A1A",shape:"circle"}],
+   sourceNote:"Scan of John Snow's 1854 map, georeferenced as a tile layer."}
+];
+const BOOKMARKS=[
+  {name:"Snow's map",xmin:-0.14413,ymin:51.50911,xmax:-0.13073,ymax:51.51686},
+  {name:"Broad Street pump",xmin:-0.1395,ymin:51.5118,xmax:-0.1337,ymax:51.5148},
+  {name:"All data",xmin:-0.1425,ymin:51.5095,xmax:-0.1305,ymax:51.5172}
+];
+
+/* ---------- sections ---------- */
+const SECTIONS=[
+ {id:"ask",title:"Ask",question:"Where did cholera deaths cluster in Soho in 1854?",layers:["snow"],bookmark:"Snow's map",
+  intro:`<p>On 31 August 1854 cholera broke out in Soho, a crowded district of London. About 500 people died within ten days. Most doctors blamed "bad air." Dr. John Snow suspected something else, and he mapped every death to find out.</p>`,
+  tasks:[
+   {type:"custom",render:(c,api)=>restoreStyle(api,"ask")},
+   {type:"button",id:"askMap",points:5,label:"Go to Soho + show Snow's Cholera Map",bookmark:"Snow's map",layersOn:["snow"],layersOff:["cases","pumps"],
+    callout:"<b>Map:</b> Only <b>Snow's Cholera Map</b> is turned on. Pan and zoom around Soho. Each short black bar (hash mark) stands for one death at that address, so a tall stack of bars means many deaths in one house."},
+   {type:"mcq",id:"askMiasma",points:10,question:"In 1854, most doctors believed cholera spread through…",
+    choices:["Contaminated drinking water","Miasma: foul, polluted air","Insect bites","Touching a sick person's clothing"],correct:1,
+    explain:"The miasma theory blamed bad air. Snow had argued since 1849 that cholera spread through water, an unpopular idea at the time."},
+   {type:"mcq",id:"askWhere",points:10,question:"Pan and zoom around Snow's map. Are there areas or specific addresses with the most documented deaths?",
+    choices:["No. The hash marks are spread evenly across the map","Yes. The tallest stacks cluster in the middle of the map, around Broad Street","Yes. Most deaths are along the outer edges of the map","Yes. Deaths are concentrated beside the River Thames"],correct:1,
+    explain:"The longest stacks of bars crowd along and around Broad Street in the centre of the map and thin out toward the edges. Spotting a cluster is a start, but it does not explain why it is there."}
+  ]},
+ {id:"acquire",title:"Acquire",question:"Which addresses recorded the most deaths?",layers:["snow"],bookmark:"Snow's map",
+  tasks:[
+   {type:"custom",render:(c,api)=>restoreStyle(api,"acquire")},
+   {type:"button",id:"acqCases",points:5,label:"Turn on Cholera Cases",layersOn:["cases"],
+    callout:"<b>Layers:</b> Turn on <b>Cholera Cases</b>. Its points sit on the same addresses as Snow's hash marks, but these points are interactive."},
+   {type:"custom",id:"acqClick",points:10,title:"Open a pop-up",text:"Click any red Cholera Cases point. What does its pop-up tell you?",render:caseClickTask},
+   {type:"custom",id:"acqTable",points:10,title:"Show the attribute table",text:"The attribute table lists every Cholera Cases record. Sort the <b>Deaths</b> column from high to low.",render:tableTask},
+   {type:"mcq",id:"acqMost",points:10,question:"With the table sorted by Deaths (high to low), which address recorded the most deaths?",
+    choices:["45 Broadwick Street","5 Greens Court","1 Kingly Court","29 Saint Annes Court"],correct:0,
+    explain:"45 Broadwick Street recorded 18 deaths, twice as many as any other address. Next came 5 Greens Court (9), then 6 Berwick Street and 1 Kingly Court (8 each). The data uses today's street names: Broad Street is now Broadwick Street."},
+   {type:"order",id:"acqRank",points:15,title:"Rank the addresses",hint:"Use the table to put these addresses in order from most to fewest deaths, then check.",
+    items:[{t:"45 Broadwick Street",d:"18 deaths"},{t:"5 Greens Court",d:"9 deaths"},{t:"7 Ingestre Place",d:"7 deaths"},{t:"83 Berwick Street",d:"5 deaths"},{t:"69 Beak Street",d:"1 death"}]},
+   {type:"mcq",id:"acqWhy",points:10,question:"The table shows which addresses were hit hardest. What can it <i>not</i> tell you?",
+    choices:["How many deaths each address had","Which addresses had the most deaths","Why those addresses were hit so hard","The street address of each record"],correct:2,
+    explain:"The table describes what happened and where, not why. To look for a cause you need to see the pattern on the map and compare it with other features, such as water pumps."}
+  ]},
+ {id:"explore",title:"Explore",question:"How can a heat map reveal the centre of the outbreak?",layers:["snow","cases"],bookmark:"Snow's map",
+  intro:`<p>Hundreds of overlapping points are hard to read. A heat map turns them into a smooth surface that shows where deaths were most concentrated.</p>`,
+  tasks:[
+   {type:"custom",render:(c,api)=>restoreStyle(api,"explore")},
+   {type:"custom",id:"expStyle",points:15,title:"Style the Cholera Cases layer",text:"Use the Styles pane: add the <b>Deaths</b> field so each address counts by its number of deaths, try the size style, then choose <b>Heat map</b> and select <b>Done</b>.",render:stylesTask},
+   {type:"mcq",id:"expColors",points:10,question:"On the heat map, what does the brightest yellow area show?",
+    choices:["The single address with the most deaths","The densest concentration of deaths, counting how close the cases are and how many deaths each had","The locations of the water pumps","Where Snow lived"],correct:1,
+    explain:"Purple and red mark lower densities; yellow marks the densest concentration of deaths. Because the style uses the Deaths field, an address with 18 deaths counts far more than an address with one."},
+   {type:"custom",id:"expProps",points:10,title:"Let Snow's map show through",text:"In the Properties pane, set <b>Blending</b> to <b>Multiply</b> (under Darken) and <b>Transparency</b> to <b>25%</b>.",render:propertiesTask},
+   {type:"mcq",id:"expBlend",points:10,question:"Why change the heat map's blending to Multiply?",
+    choices:["It deletes Snow's hash marks","It mixes the heat colours with Snow's map, so his streets and hash marks stay visible underneath","It makes the heat map cover a bigger area","It counts each death twice"],correct:1,
+    explain:"Multiply darkens the colours where the layers overlap instead of covering them, so you can read Snow's original map and the heat map together."}
+  ]},
+ {id:"analyze",title:"Analyze",question:"Which water pump was the likely source of the outbreak?",layers:["snow","cases"],bookmark:"Snow's map",
+  tasks:[
+   {type:"custom",render:(c,api)=>restoreStyle(api,"analyze")},
+   {type:"button",id:"anaPumps",points:5,label:"Turn on Water Pumps",layersOn:["pumps"],
+    callout:"<b>Layers:</b> Turn on <b>Water Pumps</b>. In 1854 most homes in Soho had no running water, so people carried drinking water from public pumps."},
+   {type:"click",id:"anaPump",points:15,layer:"pumps",title:"Find the suspect pump",
+    text:"Click the pump closest to the brightest yellow area of the heat map.",banner:"<b>Map task:</b> click the blue pump nearest the brightest yellow area",
+    test:c=>/broadwick/i.test(c.name),
+    success:c=>`<b>${c.name}</b>: the <b>Broad Street pump</b>. Broad Street has since been renamed Broadwick Street. It sits right in the core of the outbreak.`,
+    fail:c=>`${c.name} is a pump, but not the one nearest the hottest part of the heat map. Look in the yellow core.`},
+   {type:"custom",id:"anaRing",points:15,title:"Distance rings",text:"How tightly do the deaths crowd around the Broad Street pump? Drag the slider to change the ring around the pump. Find the <b>smallest</b> ring that holds at least <b>three-quarters (75%)</b> of all deaths, then lock it in.",render:ringTask},
+   {type:"mcq",id:"anaNearest",points:10,question:"A few deaths happened in houses that were closer to a different pump. When Snow investigated those households, what did he find?",
+    choices:["Many had chosen to fetch water from Broad Street anyway. Some families preferred its water, and some victims were children whose school was near the pump","They had all recently travelled abroad","They drank only beer","Their houses had no windows, so bad air collected inside"],correct:0,
+    explain:"Of 10 deaths in houses nearer another pump, Snow found that five families preferred the Broad Street water and three victims were children who went to school near it. The exceptions supported his idea rather than weakening it."},
+   {type:"button",id:"anaAll",points:5,label:"Zoom out to see all the data",bookmark:"All data",
+    callout:"<b>Bookmark:</b> Close any pop-up and zoom out until all the data is visible. Notice how the heat fades with distance from Broad Street."}
+  ]},
+ {id:"act",title:"Act",question:"What should the parish do, and how strong is the evidence?",layers:["snow","cases","pumps"],bookmark:"Broad Street pump",
+  intro:`<p>On 7 September 1854 Snow presented his evidence to the parish Board of Guardians of St James's. The next day the handle was removed from the Broad Street pump so no one could use it, and the outbreak subsided.</p>`,
+  tasks:[
+   {type:"custom",render:(c,api)=>restoreStyle(api,"act")},
+   {type:"mcq",id:"actDecline",points:10,question:"Deaths fell after the pump handle was removed. Why can't the decline be credited to the pump alone?",
+    choices:["Many residents had fled the neighbourhood, so fewer people were left to catch the disease","Cholera cannot spread in September","Other pumps were closed on the same day","The map was published before the outbreak"],correct:0,
+    explain:"Snow himself noted that many people had left the area, which may also explain why deaths fell. Correlation on a map is strong evidence, but not proof on its own."},
+   {type:"mcq",id:"actBrewery",points:10,question:"No workers at the brewery on Broad Street, a few steps from the pump, caught cholera. Which explanation fits Snow's theory?",
+    choices:["They received a daily beer allowance and did not drink the pump water","The air inside the brewery was cleaner","They had been vaccinated against cholera","They all lived far from Soho"],correct:0,
+    explain:"The brewery workers drank beer, not water from the pump. People close to the pump who avoided its water stayed healthy, which pointed to the water rather than the air."},
+   {type:"order",id:"actTimeline",points:15,title:"Put the investigation in order",
+    items:[{t:"Snow publishes his theory that cholera spreads through water",d:"1849"},{t:"Cholera breaks out in Soho",d:"31 Aug 1854"},{t:"Snow presents his evidence to the parish Board of Guardians",d:"7 Sept 1854"},{t:"The Broad Street pump handle is removed",d:"8 Sept 1854"},{t:"Snow publishes the second edition of his book, with his map",d:"1855"},{t:"Scientists isolate the cholera bacterium",d:"1883"}]},
+   {type:"free",id:"act",points:25,title:"Memo to the Board of Guardians",minWords:60,buttonLabel:"Log argument",doneLabel:"Argument logged. Download your answers below.",
+    text:"It is 7 September 1854. Choose your recommendation, then write a memo to the parish Board of Guardians. Use at least two pieces of evidence from the map (the heat map, the pump locations, the distance rings or the hardest-hit addresses) and name one limitation of the map as evidence.",
+    options:["Remove the handle of the Broad Street pump now","Wait and collect more evidence first","Clean the streets to remove bad air"],
+    label:"Write your memo",placeholder:"To the Board of Guardians of St James's: I recommend … because the map shows …"}
+  ]}
+];
+
+/* ---------- activity ---------- */
+window.ACTIVITY={
+  slug:"cholera-outbreak-1854",
+  title:"Map a Historic Cholera Outbreak",
+  subtitle:"Soho, London, 1854 · based on the Learn ArcGIS lesson by Esri",
+  storageKey:"choleraOutbreak1854State",
+  theme:{"--header":"#6B1E24","--header-rule":"#B4842D","--accent":"#5A1A1F","--accent-hover":"#6B1E24","--callout":"#F6E9E4"},
+  map:{basemap:"gray-vector",center:[-0.1366,51.5131],zoom:17,minZoom:14,maxZoom:20,measure:true,measureUnit:"meters"},
+  bookmarks:BOOKMARKS,
+  layers:LAYERS,
+  badges:[{name:"Observer"},{name:"Record Keeper"},{name:"Heat Mapper"},{name:"Pump Detective"},{name:"Health Officer"}],
+  sections:SECTIONS,
+  summaryTitle:"Your case notes",
+  onMapReady:(api)=>{ addSnowMap(api).then(()=>{ readyResolve(); api.renderLegend(); }); },
+  onExplore:(api)=>{ mapReady.then(()=>setCaseStyle(api,"heat",{blend:"multiply",opacity:.75})); },
+  sources:`<h2>Sources and data</h2>
+  <h3>Map layers</h3>
+  <table><tr><th>Layer</th><th>Source</th><th>Notes</th></tr>
+    <tr><td>Basemap</td><td>Esri Light Gray Canvas</td><td>Loaded through the ArcGIS Maps SDK for JavaScript 4.30.</td></tr>
+    <tr><td>Water Pumps</td><td><code>${PUMPS_URL}</code></td><td>13 public pumps. Falls back to a built-in copy if the service is unavailable.</td></tr>
+    <tr><td>Cholera Cases</td><td><code>${CASES_URL}</code></td><td>322 address records, 578 deaths in all. Falls back to a built-in copy if the service is unavailable.</td></tr>
+    <tr><td>Snow's Cholera Map</td><td><code>${SNOW_URL}</code></td><td>Tile layer of John Snow's map, published in <i>On the Mode of Communication of Cholera</i> (2nd ed., London, 1855); the service credits the lithograph to C.F. Cheffins.</td></tr>
+  </table>
+  <p>All three layers come from the lesson's ArcGIS Online web map <a href="https://edresources.maps.arcgis.com/apps/mapviewer/index.html?webmap=8863ffcc86134abfac5573e96e0bf336" target="_blank" rel="noopener">Cholera Outbreak, 1854</a>. The heat map, distance rings and attribute table are calculated in this app from the same data.</p>
+  <h3>References</h3>
+  <ul>
+    <li>Esri, Learn ArcGIS: <a href="https://learn.arcgis.com/en/projects/map-a-historic-cholera-outbreak" target="_blank" rel="noopener">Map a historic cholera outbreak</a>.</li>
+    <li>John Snow, <i>On the Mode of Communication of Cholera</i>, 2nd ed. (London, 1855).</li>
+    <li>Centers for Disease Control and Prevention, <a href="https://www.cdc.gov/mmwr/preview/mmwrhtml/mm5334a1.htm" target="_blank" rel="noopener">"150th Anniversary of John Snow and the Pump Handle"</a>, <i>MMWR</i> 53(34), 2004.</li>
+    <li>London Museum, <a href="https://www.londonmuseum.org.uk/collections/london-stories/john-snow-cholera-broad-street-pump/" target="_blank" rel="noopener">John Snow: Cholera and the Broad Street pump</a>.</li>
+    <li>UCLA Fielding School of Public Health, <a href="https://epi-snow.ph.ucla.edu/" target="_blank" rel="noopener">John Snow site</a>.</li>
+  </ul>`,
+  teacher:`<p>Converted from Esri's Learn ArcGIS lesson <i>Map a historic cholera outbreak</i> and its web map <i>Cholera Outbreak, 1854</i>. Students explore John Snow's map, read pop-ups and an attribute table, build a heat map weighted by deaths, and identify the Broad Street pump as the likely source. It fits units on medical geography and disease diffusion, spatial patterns and density, and the use of maps as evidence.</p>
+  <h3>Things to know</h3>
+  <ul>
+    <li><b>No ArcGIS account is needed.</b> The original lesson asks students to sign in and save a copy of the map; those steps are removed. Everything the lesson does in Map Viewer (turning on layers, pop-ups, the attribute table, Styles, Blending and Transparency) happens inside the app.</li>
+    <li>All three layers load live from the lesson's web map. If the Cholera Cases or Water Pumps service is down, the app uses a built-in copy of the same data; Snow's scanned map has no substitute and is marked unavailable.</li>
+    <li>The data uses modern street names. Broad Street is now Broadwick Street; the pump record is "43 Broadwick Street." Some addresses appear more than once in the attribute table, so students should read the Deaths column rather than count rows.</li>
+    <li>The Analyze "Distance rings" task uses straight-line distance. Snow also reasoned with walking distance along streets; a good discussion point.</li>
+    <li>Students' progress saves in their browser. The Act section ends with a memo and a <b>Download my answers</b> text file they can turn in.</li>
+    <li>Scoring: 5–15 points per task, 25 for the memo, plus streak bonuses. Explore mode shows the finished heat map with every layer on, which works well for a projector walkthrough.</li>
+  </ul>
+  <h3>Then try this</h3>
+  <ul>
+    <li>Discuss why Snow's map became better known than his written argument, and what a map can and cannot prove.</li>
+    <li>Have students compare the 1854 outbreak with a modern outbreak map. What has changed in how data is collected and shared?</li>
+    <li>Use the measure tool to compare the straight-line distance from a hard-hit address to the Broad Street pump with the route along the streets.</li>
+  </ul>`
+};
+})();
+
+</script>
+<script>
+/* =====================================================================
+   GeoInquiries Lab — activity engine
+   Derived from "A Nation Divided: Civil War Map Missions" (final state).
+   Reads the global ACTIVITY object (see README.md for the schema) and
+   renders the header, five-section GeoInquiry rail, scoring/badges,
+   ArcGIS map with Layers/Legend panels, bookmarks, modes and modals.
+   ===================================================================== */
+(function(){
+"use strict";
+const A = window.ACTIVITY || {};
+if(!A.sections || !A.sections.length) throw new Error("ACTIVITY.sections is required");
+
+/* ---------- helpers ---------- */
+const $ = (id)=>document.getElementById(id);
+const esc = (s)=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function h(html){ const t=document.createElement("template"); t.innerHTML=html.trim(); return t.content.firstElementChild; }
+function fb(el,ok,text){ el.hidden=false; el.className="feedback "+(ok===null?"":(ok?"good":"bad")); el.innerHTML=text; }
+const hex2rgba=(hx,a)=>{ if(Array.isArray(hx)) return hx.length===4?hx:[...hx,a]; const n=parseInt(hx.slice(1),16); return [(n>>16)&255,(n>>8)&255,n&255,a]; };
+function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a.every((v,i)=>v===i)&&a.length>1?shuffle(a):a; }
+
+/* ---------- palette (language / colonial power / generic categories) ---------- */
+const PALETTE = Object.assign({
+  fr:{label:"French",color:"#3B5BA9"},
+  en:{label:"English",color:"#B33A3A"},
+  es:{label:"Spanish",color:"#D98A1F"},
+  nl:{label:"Dutch",color:"#E4641E"},
+  sv:{label:"Swedish",color:"#3E8FB0"},
+  pt:{label:"Portuguese",color:"#2F8F6B"},
+  dk:{label:"Danish",color:"#7A6A54"},
+  ru:{label:"Russian",color:"#5A7D2A"},
+  am:{label:"Amerindian (Indigenous)",color:"#7A4FA3"},
+  sa:{label:"South Asian (Hindi/Urdu)",color:"#A0286F"},
+  other:{label:"Other",color:"#6E6E6E"},
+  c1:{label:"Category 1",color:"#2E5E9E"},c2:{label:"Category 2",color:"#9C7A4A"},c3:{label:"Category 3",color:"#C9A227"},
+  c4:{label:"Category 4",color:"#2F7D4F"},c5:{label:"Category 5",color:"#A83A2A"},c6:{label:"Category 6",color:"#7A4FA3"},
+  c7:{label:"Category 7",color:"#3E8FB0"},c8:{label:"Category 8",color:"#E4641E"}
+}, A.palette||{});
+function classify(v){
+  if(typeof A.classify==="function"){ const k=A.classify(v); if(k&&PALETTE[k]) return k; }
+  const s=String(v==null?"":v).trim().toLowerCase();
+  for(const k of Object.keys(PALETTE)){ if(k===s||PALETTE[k].label.toLowerCase()===s) return k; }
+  if(/french|france/.test(s)) return "fr";
+  if(/english|england|brit|great britain|\buk\b/.test(s)) return "en";
+  if(/spanish|spain|castil/.test(s)) return "es";
+  if(/dutch|netherland|holland/.test(s)) return "nl";
+  if(/swed/.test(s)) return "sv";
+  if(/portug|brazil/.test(s)) return "pt";
+  if(/dan(ish|mark)/.test(s)) return "dk";
+  if(/russia/.test(s)) return "ru";
+  if(/native|amerind|indigenous|indian|arawak|carib|taino|taíno|aztec|nahuatl|maya|inca|first nation/.test(s)) return "am";
+  if(/hindi|urdu|south asian|east indian/.test(s)) return "sa";
+  // stable generic category by hash
+  let x=0; for(const ch of s) x=(x*31+ch.charCodeAt(0))>>>0; return "c"+(1+(x%8));
+}
+const colorOf=(k)=>(PALETTE[k]||PALETTE.other).color;
+const labelOf=(k)=>(PALETTE[k]||PALETTE.other).label;
+
+/* ---------- branding, theme, header ---------- */
+document.title=A.title||document.title;
+$("appTitle").firstChild.textContent=A.title||"";
+$("appSubtitle").textContent=A.subtitle||"";
+if(A.theme) Object.entries(A.theme).forEach(([k,v])=>document.documentElement.style.setProperty(k,v));
+if(A.logo){ if(A.logo.src) $("logoImg").src=A.logo.src; if(A.logo.alt) $("logoImg").alt=A.logo.alt; if(A.logo.href) $("logoLink").href=A.logo.href; }
+
+/* ---------- sections, badges, state ---------- */
+const SECTIONS=A.sections;
+const ORDER=SECTIONS.map(s=>s.id);
+const TITLES=Object.fromEntries(SECTIONS.map(s=>[s.id,s.title]));
+const DEFAULT_BADGE_NAMES=["Cartographer","Surveyor","Scout","Strategist","Historian"];
+const BADGES=SECTIONS.map((s,i)=>Object.assign({id:s.id,letter:String(i+1),name:(A.badges&&A.badges[i]&&A.badges[i].name)||DEFAULT_BADGE_NAMES[i]||("Badge "+(i+1)),section:s.title},(A.badges&&A.badges[i])||{}));
+const STORAGE=A.storageKey||("geoinquiry:"+(A.slug||A.title||"activity"));
+const fresh=()=>({score:0,badges:[],mission:ORDER[0],done:{},answers:{},tasks:{},streak:0});
+let state=load()||fresh();
+function load(){ try{ const s=localStorage.getItem(STORAGE); return s?JSON.parse(s):null; }catch(e){ return null; } }
+function save(){ try{ localStorage.setItem(STORAGE,JSON.stringify(state)); }catch(e){} }
+function award(points,label){ state.score+=points; save(); $("scoreVal").textContent=state.score; if(points>0) toast(`+${points} ${label||"points"}`); }
+function taskDone(id){ return !!state.tasks[id]; }
+function markTask(id,points,label){ if(state.tasks[id]) return false; state.tasks[id]=true; save(); award(points,label); updateFinishBlock(); renderProgress(); renderBadges(); return true; }
+function earnBadge(id){
+  if(state.badges.includes(id)) return;
+  state.badges.push(id); state.done[id]=true; save(); renderBadges(); renderProgress();
+  const b=BADGES.find(x=>x.id===id); toast(`Badge earned: ${b.name}`);
+}
+function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove("show"),2200); }
+function sectionTaskIds(secId){ const s=SECTIONS.find(x=>x.id===secId); return s.tasks.filter(t=>t.id&&t.required!==false&&!["callout","html"].includes(t.type)).map(t=>t.id); }
+function badgeStatus(b){
+  if(state.badges.includes(b.id)) return "complete";
+  const started=b.id===state.mission||sectionTaskIds(b.id).some(taskDone);
+  return started?"in progress":"not started";
+}
+function renderBadges(){
+  const el=$("badges"); el.innerHTML="";
+  BADGES.forEach(b=>{
+    const d=document.createElement("div");
+    d.className="badge"+(state.badges.includes(b.id)?" earned":"");
+    const tip=`${b.letter}: ${b.section} ${badgeStatus(b)}`;
+    d.innerHTML=`<span aria-hidden="true">${esc(b.letter)}</span><span class="visually-hidden">${esc(tip)}</span>`;
+    d.setAttribute("role","listitem"); d.setAttribute("title",tip);
+    el.appendChild(d);
+  });
+  $("scoreVal").textContent=state.score;
+}
+function renderProgress(){
+  const nav=$("progressNav"); nav.innerHTML=""; nav.style.gridTemplateColumns=`repeat(${ORDER.length},1fr)`;
+  ORDER.forEach((m,i)=>{
+    const b=document.createElement("button"); b.type="button";
+    const unlocked=i===0||state.done[ORDER[i-1]];
+    const status=state.done[m]?"completed":(m===state.mission?"current section":(unlocked?"not started":"locked"));
+    b.innerHTML=`<b>${i+1}</b>${esc(TITLES[m])}<span class="visually-hidden">, ${status}</span>`;
+    b.className=(m===state.mission?"current ":"")+(state.done[m]?"done":"");
+    if(m===state.mission) b.setAttribute("aria-current","step");
+    b.disabled=!unlocked;
+    b.addEventListener("click",()=>{ state.mission=m; save(); renderMission(); });
+    nav.appendChild(b);
+  });
+}
+
+/* ---------- map ---------- */
+const MAPCFG=Object.assign({basemap:"topo-vector",center:[-95,38],zoom:4,minZoom:2,maxZoom:14,measure:false},A.map||{});
+const LAYERS=(A.layers||[]).slice();
+if(A.notes&&A.notes.length&&!LAYERS.some(l=>l.key==="notes")) LAYERS.unshift({key:"notes",title:"Map notes",visible:true,legend:"notes"});
+const map={ready:false,failed:false,view:null,layers:{},cfg:{},fallback:{},unavailable:{},values:{},modules:null,clickHandler:null,onNoteOpen:null,openedNotes:{},measure:null};
+LAYERS.forEach(l=>map.cfg[l.key]=l);
+const BOOKMARKS=A.bookmarks||[];
+
+function status(msg,err){ const s=$("mapStatus"); s.textContent=msg||""; s.classList.toggle("err",!!err); }
+function refreshStatus(){
+  const subs=Object.keys(map.fallback).map(k=>map.cfg[k].title), un=Object.keys(map.unavailable).map(k=>map.cfg[k].title);
+  if(!map.ready) return;
+  if(un.length) status(`Map ready · unavailable: ${un.join(", ")}`,true);
+  else if(subs.length) status(`Map ready · built-in substitute for ${subs.join(", ")}`);
+  else status("Map ready");
+}
+function initMap(){
+  if(typeof require!=="function"){ mapFailed(); return; }
+  require([
+    "esri/Map","esri/views/MapView","esri/layers/GraphicsLayer","esri/layers/FeatureLayer","esri/Graphic",
+    "esri/geometry/Point","esri/geometry/Polygon","esri/geometry/Polyline","esri/geometry/Extent",
+    "esri/geometry/support/webMercatorUtils","esri/geometry/geometryEngine","esri/core/reactiveUtils","esri/widgets/DistanceMeasurement2D"
+  ], function(Map,MapView,GraphicsLayer,FeatureLayer,Graphic,Point,Polygon,Polyline,Extent,wmUtils,geometryEngine,reactiveUtils,DistanceMeasurement2D){
+    try{
+      map.modules={Graphic,Point,Polygon,Polyline,Extent,wmUtils,geometryEngine,DistanceMeasurement2D,FeatureLayer,GraphicsLayer};
+      const pt=(lon,lat)=>new Point({longitude:lon,latitude:lat});
+      const label=(lon,lat,text,color,size,yoff)=>new Graphic({geometry:pt(lon,lat),
+        symbol:{type:"text",color:color||"#1B2A3C",haloColor:"#fff",haloSize:2,text,yoffset:yoff==null?10:yoff,
+                font:{size:size||10,family:"Source Sans 3",weight:"bold"}}});
+      const marker=(style,color,size)=>style==="cross"||style==="x"
+        ?{type:"simple-marker",style,size:size||12,color,outline:{color,width:3}}
+        :{type:"simple-marker",style:style||"circle",size:size||10,color,outline:{color:"#fff",width:1.2}};
+      const fill=(color,a)=>({type:"simple-fill",color:hex2rgba(color,a==null?.4:a),outline:{color,width:1.2}});
+      const line=(color,w,style)=>({type:"simple-line",color,width:w||3,style:style||"solid"});
+
+      // Client-side layer from cfg.features (also used as a fallback for a failed service)
+      function graphicsFrom(cfg){
+        const g=new GraphicsLayer({title:cfg.title,visible:!!cfg.visible});
+        (cfg.features||[]).forEach(f=>{
+          const cls=f.cls||(cfg.classField&&f.attrs?classify(f.attrs[cfg.classField]):null);
+          const color=f.color||(cls?colorOf(cls):(cfg.color||"#6E6E6E"));
+          let geometry,symbol;
+          if(f.rings){ geometry=new Polygon({rings:f.rings}); symbol=fill(color,cfg.fillOpacity); }
+          else if(f.path){ geometry=new Polyline({paths:[f.path]}); symbol=line(color,cfg.size||4,cfg.lineStyle); }
+          else { geometry=pt(f.lon,f.lat); symbol=marker(f.shape||cfg.shape||"circle",color,f.size||cfg.size); }
+          const attrs=Object.assign({},f.attrs||{},{__cls:cls||"",__name:(f.attrs&&(f.attrs[cfg.nameField||"name"]||f.attrs.name||f.attrs.NAME))||f.name||""});
+          const gr=new Graphic({geometry,symbol,attributes:attrs});
+          if(cfg.popup){ gr.popupTemplate={title:cfg.popup.title||"{__name}",content:typeof cfg.popup.content==="function"?(ev)=>cfg.popup.content(ev.graphic.attributes,cls):cfg.popup.content}; }
+          g.add(gr);
+          if(cfg.labels&&!f.rings&&!f.path) g.add(label(f.lon,f.lat,attrs.__name,color,cfg.labelSize||9,cfg.labelOffset==null?9:cfg.labelOffset));
+        });
+        return g;
+      }
+      // Notes layer
+      function notesLayer(){
+        const g=new GraphicsLayer({title:"Map notes",visible:map.cfg.notes?map.cfg.notes.visible!==false:true});
+        (A.notes||[]).forEach(n=>{
+          g.add(new Graphic({geometry:pt(n.lon,n.lat),
+            symbol:{type:"simple-marker",style:"square",size:16,color:[255,255,255,.95],outline:{color:getComputedStyle(document.documentElement).getPropertyValue("--accent").trim()||"#1B2A3C",width:2.5}},
+            attributes:{id:n.id,title:n.title,text:n.text,__name:n.title},
+            popupTemplate:{title:"{title}",content:"{text}"}}));
+          g.add(label(n.lon,n.lat,n.title,getComputedStyle(document.documentElement).getPropertyValue("--accent").trim()||"#1B2A3C",11,-14));
+        });
+        return g;
+      }
+      // Live service layer
+      function featureFrom(cfg){
+        const opts={url:cfg.url,title:cfg.title,visible:!!cfg.visible,outFields:["*"]};
+        if(cfg.definitionExpression) opts.definitionExpression=cfg.definitionExpression;
+        if(cfg.opacity!=null) opts.opacity=cfg.opacity;
+        if(cfg.renderer) opts.renderer=cfg.renderer;
+        else if(!cfg.legendField&&(cfg.color||cfg.shape)) opts.renderer={type:"simple",symbol:marker(cfg.shape||"circle",cfg.color||"#6E6E6E",cfg.size)};
+        if(cfg.labelField) opts.labelingInfo=[{labelExpressionInfo:{expression:"$feature."+cfg.labelField},symbol:{type:"text",color:"#1B2A3C",haloColor:"#fff",haloSize:1.5,font:{size:cfg.labelSize||9,family:"Source Sans 3",weight:"bold"}},labelPlacement:"above-right"}];
+        if(cfg.popup) opts.popupTemplate={title:cfg.popup.title||("{"+(cfg.nameField||"NAME")+"}"),content:typeof cfg.popup.content==="function"?(ev)=>cfg.popup.content(ev.graphic.attributes,classify(ev.graphic.attributes[cfg.legendField||cfg.classField])):cfg.popup.content};
+        return new FeatureLayer(opts);
+      }
+      // Distinct-value renderer + legend values for a live layer
+      function styleLive(cfg,L){
+        const f=cfg.legendField; if(!f||cfg.renderer||cfg.legend==="none"||Array.isArray(cfg.legend)) return Promise.resolve();
+        return L.queryFeatures({where:"1=1",outFields:[f],returnGeometry:false,returnDistinctValues:true}).then(res=>{
+          const vals=[...new Set(res.features.map(x=>x.attributes[f]).filter(v=>v!=null&&String(v).trim()!==""))];
+          map.values[cfg.key]=vals.map(v=>({value:v,cls:classify(v)}));
+          const poly=L.geometryType==="polygon", ln=L.geometryType==="polyline";
+          L.renderer={type:"unique-value",field:f,
+            uniqueValueInfos:vals.map(v=>{const c=colorOf(classify(v)); return {value:v,label:String(v),symbol:poly?fill(c,cfg.fillOpacity==null?.45:cfg.fillOpacity):ln?line(c,cfg.size||3):marker(cfg.shape||"circle",c,cfg.size)};}),
+            defaultSymbol:poly?fill("#6E6E6E",.35):ln?line("#6E6E6E",2):marker(cfg.shape||"circle","#6E6E6E",cfg.size)};
+          renderLegend();
+        }).catch(err=>{ console.warn("Could not read values for",cfg.key,err&&err.message); map.values[cfg.key]=[{value:"Features",cls:"other"}]; renderLegend(); });
+      }
+
+      const built=[];
+      LAYERS.forEach(cfg=>{
+        let L;
+        if(cfg.key==="notes") L=notesLayer();
+        else if(cfg.url) L=featureFrom(cfg);
+        else L=graphicsFrom(cfg);
+        map.layers[cfg.key]=L; built.push(L);
+      });
+      const game=new GraphicsLayer({title:"Game markers"}); map.layers.__game=game;
+      const m=new Map({basemap:MAPCFG.basemap,layers:[...built.slice().reverse(),game]}); // first in config = top of panel = drawn on top
+      const view=new MapView({container:"viewDiv",map:m,center:MAPCFG.center,zoom:MAPCFG.zoom,
+        constraints:{minZoom:MAPCFG.minZoom,maxZoom:MAPCFG.maxZoom},popup:{dockEnabled:false,dockOptions:{buttonEnabled:false}}});
+      map.view=view;
+
+      // Load live services; swap in fallbacks when they fail
+      LAYERS.filter(c=>c.url).forEach(cfg=>{
+        const L=map.layers[cfg.key];
+        L.load().then(()=>styleLive(cfg,L)).catch(err=>{
+          console.warn("Layer unavailable:",cfg.key,err&&err.message);
+          const idx=m.layers.indexOf(L); m.remove(L);
+          if(cfg.features&&cfg.features.length){
+            const fbL=graphicsFrom(Object.assign({},cfg,{visible:L.visible})); m.add(fbL,Math.max(0,idx)); map.layers[cfg.key]=fbL; map.fallback[cfg.key]=true;
+          } else { map.unavailable[cfg.key]=true; delete map.layers[cfg.key]; }
+          refreshStatus(); renderLayerList(); renderLegend();
+        });
+      });
+
+      view.when(()=>{
+        map.ready=true; $("mapError").classList.remove("show"); refreshStatus();
+        renderMission();
+        reactiveUtils.watch(()=>view.popup&&view.popup.selectedFeature,(g)=>{
+          if(g&&g.layer===map.layers.notes&&g.attributes&&g.attributes.id){
+            map.openedNotes[g.attributes.id]=true;
+            if(typeof map.onNoteOpen==="function") map.onNoteOpen(g.attributes.id);
+          }
+        });
+        if(typeof A.onMapReady==="function") A.onMapReady(api);
+      },(err)=>{ console.error(err); mapFailed(); });
+      view.on("click",(ev)=>{ if(map.clickHandler) map.clickHandler(ev); });
+      renderLayerList(); renderLegend();
+    }catch(e){ console.error(e); mapFailed(); }
+  }, function(err){ console.error(err); mapFailed(); });
+}
+function mapFailed(){ $("mapError").classList.add("show"); status("Map unavailable",true); map.ready=false; map.failed=true; renderMission(); }
+
+function setLayer(key,on){
+  const cb=document.querySelector(`#layersList input[data-layer="${key}"]`); if(cb) cb.checked=on;
+  if(map.layers[key]) map.layers[key].visible=on; else if(map.cfg[key]) map.cfg[key].visible=on;
+  renderLegend();
+}
+const layerOn=(k)=>map.layers[k]?!!map.layers[k].visible:(!map.failed&&!!(map.cfg[k]&&map.cfg[k].visible));
+function allLayers(on){ LAYERS.filter(l=>!l.exploreHidden).forEach(l=>setLayer(l.key,on)); }
+function renderLayerList(){
+  const ul=$("layersList"); ul.innerHTML="";
+  LAYERS.forEach(l=>{
+    const un=map.unavailable[l.key];
+    const li=h(`<li><label class="${un?"unavailable":""}"><input type="checkbox" data-layer="${esc(l.key)}" ${layerOn(l.key)?"checked":""} ${un?"disabled":""}> ${esc(l.title)}${un?" (unavailable)":""}</label></li>`);
+    li.querySelector("input").addEventListener("change",(e)=>setLayer(l.key,e.target.checked));
+    ul.appendChild(li);
+  });
+}
+function goBookmark(name){
+  const b=BOOKMARKS.find(x=>x.name===name); if(!b||!map.ready) return;
+  const ext=new map.modules.Extent({xmin:b.xmin,ymin:b.ymin,xmax:b.xmax,ymax:b.ymax,spatialReference:{wkid:4326}});
+  map.view.goTo(ext).catch(()=>{}); $("bookmarks").value=String(BOOKMARKS.indexOf(b));
+}
+function goTo(target){ if(map.ready) map.view.goTo(target).catch(()=>{}); }
+function banner(html){ const b=$("mapBanner"); if(!html){b.classList.remove("show");b.innerHTML="";return;} b.innerHTML=html; b.classList.add("show"); }
+const swatch=(shape,color)=>shape==="cross"?`<span class="sw cross" style="color:${color}">+</span>`:shape==="line"?`<span class="sw line" style="border-top-color:${color}"></span>`:shape==="tri"?`<span class="sw tri" style="border-bottom-color:${color}"></span>`:`<span class="sw ${shape==="circle"?"dot":shape==="square"?"sq":shape==="diamond"?"dia":""}" style="background:${color}"></span>`;
+function legendRows(cfg){
+  if(cfg.legend==="none") return "";
+  if(cfg.legend==="notes") return `<div><span class="sw note"></span>Click a note to read it</div>`;
+  if(Array.isArray(cfg.legend)) return cfg.legend.map(r=>`<div>${swatch(r.shape||cfg.shape||"square",r.color)}${esc(r.label)}</div>`).join("");
+  const L=map.layers[cfg.key], isFallback=map.fallback[cfg.key]||!cfg.url;
+  const shapeFor=(f)=>(f&&f.rings)?"square":(f&&f.path)?"line":(cfg.shape||"circle");
+  if(isFallback){
+    const feats=cfg.features||[]; const seen=new Map();
+    feats.forEach(f=>{ const cls=f.cls||(cfg.classField&&f.attrs?classify(f.attrs[cfg.classField]):null); if(cls&&!seen.has(cls)) seen.set(cls,shapeFor(f)); });
+    if(!seen.size) return `<div>${swatch(shapeFor(feats[0]),cfg.color||"#6E6E6E")}${esc(cfg.legendLabel||cfg.title)}</div>`;
+    return [...seen].map(([cls,shape])=>`<div>${swatch(shape,colorOf(cls))}${esc(labelOf(cls))}</div>`).join("");
+  }
+  if(!cfg.legendField||cfg.renderer){ return `<div>${swatch(L&&L.geometryType==="polygon"?"square":(cfg.shape||"circle"),cfg.color||"#6E6E6E")}${esc(cfg.legendLabel||cfg.title)}</div>`; }
+  const vals=map.values[cfg.key]; if(!vals) return `<div class="hint">Loading…</div>`;
+  const shape=L&&L.geometryType==="polygon"?"square":L&&L.geometryType==="polyline"?"line":(cfg.shape||"circle");
+  return vals.map(v=>`<div>${swatch(shape,colorOf(v.cls))}${esc(v.value)}</div>`).join("");
+}
+function renderLegend(){
+  const rows=[];
+  LAYERS.forEach(cfg=>{ if(!layerOn(cfg.key)||cfg.legend==="none") return; const r=legendRows(cfg); if(r) rows.push(`<h5>${esc(cfg.legendTitle||cfg.title)}</h5>${r}`); });
+  $("legend").innerHTML=rows.join("");
+}
+function wireMapTools(){
+  const tg=$("layersToggle"), list=$("layersList");
+  tg.addEventListener("click",()=>{ const open=list.classList.toggle("collapsed")===false; tg.textContent=open?"Hide":"Show"; tg.setAttribute("aria-expanded",String(open)); });
+  const lg=$("legendToggle"), lbody=$("legend");
+  lg.addEventListener("click",()=>{ const open=lbody.classList.toggle("collapsed")===false; lg.textContent=open?"Hide":"Show"; lg.setAttribute("aria-expanded",String(open)); });
+  const sel=$("bookmarks");
+  if(BOOKMARKS.length){ $("bookmarksPanel").hidden=false;
+    const bt=$("bookmarksToggle"), bb=$("bookmarksBody");
+    bt.addEventListener("click",()=>{ const open=bb.classList.toggle("collapsed")===false; bt.textContent=open?"Hide":"Show"; bt.setAttribute("aria-expanded",String(open)); });
+    sel.innerHTML=`<option value="">Select a bookmark…</option>`+BOOKMARKS.map((b,i)=>`<option value="${i}">${esc(b.name)}</option>`).join(""); sel.addEventListener("change",()=>{ if(sel.value!=="") goBookmark(BOOKMARKS[+sel.value].name); }); }
+  const mb=$("btnMeasure"); if(MAPCFG.measure){ mb.hidden=false; mb.addEventListener("click",()=>toggleMeasure()); }
+}
+function toggleMeasure(force){
+  const btn=$("btnMeasure"); const on=(typeof force==="boolean")?force:!map.measure;
+  if(on&&map.ready&&!map.measure){ map.measure=new map.modules.DistanceMeasurement2D({view:map.view,unit:MAPCFG.measureUnit||"miles"}); map.view.ui.add(map.measure,"top-left"); map.measure.viewModel.start(); btn.classList.add("on"); btn.setAttribute("aria-pressed","true"); }
+  else if(!on&&map.measure){ map.view.ui.remove(map.measure); map.measure.destroy(); map.measure=null; btn.classList.remove("on"); btn.setAttribute("aria-pressed","false"); }
+}
+function clearGame(){ if(map.layers.__game) map.layers.__game.removeAll(); map.clickHandler=null; map.onNoteOpen=null; banner(""); }
+function milesBetween(p1,p2){ const g=map.modules.geometryEngine, w=map.modules.wmUtils; const a=w.geographicToWebMercator(p1), b=w.geographicToWebMercator(p2); return g.geodesicLength({type:"polyline",paths:[[[a.x,a.y],[b.x,b.y]]],spatialReference:{wkid:3857}},"miles"); }
+// attribute accessors that work for live services and built-in layers alike
+const nameOf=(a)=>a.__name||a.name||a.NAME||a.Name||"";
+const clsOf=(a,cfg)=>a.__cls||classify(a[(cfg&&(cfg.legendField||cfg.classField))||"ROOT"]||a.cls||"");
+const valueOf=(a,cfg)=>a[(cfg&&(cfg.legendField||cfg.classField))]||a.ROOT||a.lang||a.power||labelOf(clsOf(a,cfg));
+
+/* ---------- task types ---------- */
+const missionEl=$("mission");
+const TASKS={};
+TASKS.callout=(c,t)=>{ c.appendChild(h(`<div class="callout">${t.html}</div>`)); };
+TASKS.html=(c,t)=>{ c.appendChild(h(`<div>${t.html}</div>`)); };
+
+TASKS.mcq=(container,{id,points,question,choices,correct,explain})=>{
+  const card=h(`<div class="task"><span class="pts">${points} pts</span><h3>${question}</h3><div class="choices"></div><div class="feedback" hidden></div></div>`);
+  const ch=card.querySelector(".choices"), f=card.querySelector(".feedback"); const done=taskDone(id);
+  choices.forEach((c,i)=>{
+    const b=h(`<button type="button">${c}</button>`);
+    if(done){ b.disabled=true; if(i===correct) b.classList.add("correct"); }
+    b.addEventListener("click",()=>{
+      const ok=i===correct; ch.querySelectorAll("button").forEach(x=>x.disabled=true);
+      b.classList.add(ok?"correct":"wrong"); if(!ok) ch.querySelectorAll("button")[correct].classList.add("correct");
+      fb(f,ok,(ok?"Correct. ":"Not quite. ")+explain);
+      if(ok){ state.streak++; markTask(id,points+(state.streak>=3?5:0),state.streak>=3?"points (streak bonus)":"points"); }
+      else { state.streak=0; markTask(id,Math.max(2,Math.floor(points/3)),"points for trying"); }
+      state.answers[id]=choices[i].replace(/<[^>]+>/g,""); save();
+    });
+    ch.appendChild(b);
+  });
+  if(done) fb(f,true,"Already answered. "+explain);
+  container.appendChild(card);
+};
+
+TASKS.multi=(container,{id,points,question,choices,correct,explain})=>{
+  const card=h(`<div class="task"><span class="pts">${points} pts</span><h3>${question}</h3><p class="hint">Select all that apply, then check.</p><div class="choices"></div><button class="primary" type="button">Check answer</button><div class="feedback" hidden></div></div>`);
+  const ch=card.querySelector(".choices"), f=card.querySelector(".feedback"), btn=card.querySelector("button.primary");
+  choices.forEach((c,i)=>ch.appendChild(h(`<label><input type="checkbox" value="${i}"> <span>${c}</span></label>`)));
+  if(taskDone(id)){ btn.disabled=true; fb(f,true,"Already answered. "+explain); ch.querySelectorAll("input").forEach(x=>{x.disabled=true;x.checked=correct.includes(+x.value);}); }
+  btn.addEventListener("click",()=>{
+    const picked=[...ch.querySelectorAll("input:checked")].map(x=>+x.value);
+    const right=picked.filter(p=>correct.includes(p)).length, wrong=picked.length-right, ok=right===correct.length&&wrong===0;
+    btn.disabled=true; ch.querySelectorAll("input").forEach(x=>x.disabled=true);
+    fb(f,ok,(ok?"Correct. ":`You found ${right} of ${correct.length}${wrong?` and picked ${wrong} that did not fit`:""}. `)+explain);
+    markTask(id,ok?points:Math.max(2,Math.round(points*right/correct.length)-wrong*2),"points");
+    state.answers[id]=picked.map(p=>choices[p].replace(/<[^>]+>/g,"")); save();
+  });
+  container.appendChild(card);
+};
+
+TASKS.numeric=(container,{id,points,title,text,min,max,unit,explain,placeholder,skipValue})=>{
+  const card=h(`<div class="task"><span class="pts">${points} pts</span><h3>${title}</h3><p>${text||""}</p>
+    <div class="row"><label for="num_${id}" class="visually-hidden">${esc(title)}</label><input type="number" id="num_${id}" step="any" placeholder="${esc(placeholder||unit||"")}"><button class="primary" type="button">Check</button></div><div class="feedback" hidden></div></div>`);
+  const f=card.querySelector(".feedback"), inp=card.querySelector("input"), btn=card.querySelector("button.primary");
+  btn.addEventListener("click",()=>{
+    const v=parseFloat(inp.value); if(isNaN(v)){ fb(f,false,"Enter a number first."); return; }
+    const ok=v>=min&&v<=max; fb(f,ok,(ok?"Correct. ":`You entered ${v}${unit?" "+unit:""}. `)+explain);
+    if(ok){ state.answers[id]=v; markTask(id,points,"points"); btn.disabled=true; }
+  });
+  if(taskDone(id)){ fb(f,true,`Done (you entered ${state.answers[id]}${unit?" "+unit:""}). `+explain); btn.disabled=true; }
+  else if(map.failed&&skipValue!=null){ fb(f,false,`Map unavailable: the answer is about ${skipValue}${unit?" "+unit:""}. Enter it to continue.`); }
+  container.appendChild(card);
+};
+
+TASKS.order=(container,{id,points,title,hint,items})=>{
+  const card=h(`<div class="task"><span class="pts">${points} pts</span><h3>${title}</h3><p class="hint">${hint||"Use the arrows to move items until they are in the right order, then check."}</p><ol class="order-list"></ol><button class="primary" type="button">Check order</button><div class="feedback" hidden></div></div>`);
+  const ol=card.querySelector(".order-list"), btn=card.querySelector("button.primary"), f=card.querySelector(".feedback");
+  let order=state.answers[id]||shuffle(items.map((_,i)=>i)); const done=taskDone(id);
+  function draw(check){
+    ol.innerHTML="";
+    order.forEach((ei,pos)=>{
+      const right=ei===pos;
+      const li=h(`<li><span class="num">${pos+1}</span><span>${items[ei].t}${check||done?` <span class="hint">(${items[ei].d||""})</span> <span class="visually-hidden">${right?"correct position":"wrong position"}</span><span aria-hidden="true">${right?" ✓":" ✗"}</span>`:""}</span><span class="mv"><button type="button" aria-label="Move up">↑</button><button type="button" aria-label="Move down">↓</button></span></li>`);
+      if(check||done) li.classList.add(right?"right":"wrong");
+      const [up,dn]=li.querySelectorAll("button"); up.disabled=pos===0||done; dn.disabled=pos===order.length-1||done;
+      up.addEventListener("click",()=>{[order[pos-1],order[pos]]=[order[pos],order[pos-1]];draw();});
+      dn.addEventListener("click",()=>{[order[pos+1],order[pos]]=[order[pos],order[pos+1]];draw();});
+      ol.appendChild(li);
+    });
+  }
+  draw(false);
+  if(done){ btn.disabled=true; fb(f,true,"Already completed."); }
+  btn.addEventListener("click",()=>{
+    const right=order.filter((ei,pos)=>ei===pos).length, ok=right===items.length;
+    state.answers[id]=order; save(); draw(true); btn.disabled=true;
+    fb(f,ok,ok?"Correct: everything is in order.":`${right} of ${items.length} items are in the right position. The details are now shown so you can see the sequence.`);
+    markTask(id,ok?points:Math.round(points*right/items.length),"points");
+    ol.querySelectorAll(".mv button").forEach(b=>b.disabled=true);
+  });
+  container.appendChild(card);
+};
+
+TASKS.free=(container,{id,points,title,text,label,placeholder,minWords,options,buttonLabel,doneLabel})=>{
+  minWords=minWords||50; const saved=state.answers[id]||{};
+  const card=h(`<div class="task"><span class="pts">${points} pts</span><h3>${title}</h3><p>${text||""}</p>
+    ${options?`<div class="choices" id="opts_${id}"></div>`:""}
+    <label for="ta_${id}"><b>${label||"Write your response"}</b> (at least ${minWords} words).</label>
+    <textarea id="ta_${id}" placeholder="${esc(placeholder||"")}"></textarea>
+    <p class="hint" id="wc_${id}">0 words</p>
+    <div class="row"><button class="primary" type="button">${buttonLabel||"Log response"}</button></div>
+    <div class="feedback" hidden></div></div>`);
+  const ta=card.querySelector("textarea"), wc=card.querySelector(`#wc_${id}`), f=card.querySelector(".feedback"), sub=card.querySelector("button.primary");
+  let pick=saved.pick;
+  if(options){ const ch=card.querySelector(`#opts_${id}`); options.forEach((o,i)=>{ const b=h(`<button type="button">${o}</button>`); if(pick===i) b.classList.add("correct"); b.addEventListener("click",()=>{ if(taskDone(id)) return; pick=i; ch.querySelectorAll("button").forEach(x=>x.classList.remove("correct")); b.classList.add("correct"); }); ch.appendChild(b); }); }
+  ta.value=saved.text||"";
+  const words=()=>ta.value.trim().split(/\s+/).filter(Boolean).length; const upd=()=>wc.textContent=`${words()} words`; upd(); ta.addEventListener("input",upd);
+  const finished=doneLabel||"Response logged.";
+  if(taskDone(id)){ ta.disabled=true; sub.disabled=true; card.querySelectorAll(".choices button").forEach(x=>x.disabled=true); fb(f,true,finished); }
+  sub.addEventListener("click",()=>{
+    if(options&&pick===undefined){ fb(f,false,"Choose one of the options first."); return; }
+    if(words()<minWords){ fb(f,false,`Your response has ${words()} words. Add more to reach ${minWords}.`); return; }
+    state.answers[id]={pick,option:options?options[pick]:undefined,text:ta.value}; markTask(id,points,"points"); save();
+    fb(f,true,finished); renderMission();
+  });
+  container.appendChild(card);
+};
+
+TASKS.detective=(container,{id,deck,langs,title,intro,perPoints})=>{
+  const per=perPoints||3, total=deck.length*per;
+  const card=h(`<div class="task"><span class="pts">up to ${total} pts</span><h3>${title||"Name detective"}</h3><p class="hint">${intro||"Look for each name on the map, then choose its language of origin."} ${per} points per correct name.</p><div class="det"></div></div>`);
+  container.appendChild(card); const area=card.querySelector(".det");
+  const prog=state.answers[id]||{index:0,earned:0,log:[]};
+  function render(){
+    area.innerHTML="";
+    if(prog.index>=deck.length){
+      area.appendChild(h(`<div class="feedback good">Detective work complete: ${prog.earned} of ${total} points.</div>`));
+      if(!taskDone(id)){ state.tasks[id]=true; save(); updateFinishBlock(); renderProgress(); renderBadges(); }
+      return;
+    }
+    const item=deck[prog.index];
+    area.appendChild(h(`<p><b>${prog.index+1} of ${deck.length}:</b> What is the language of origin of <b>${esc(item.n)}</b>?</p>`));
+    const ch=h(`<div class="choices inline"></div>`);
+    langs.forEach(k=>{
+      const b=h(`<button type="button">${esc(labelOf(k).replace(" (Indigenous)",""))}</button>`);
+      b.addEventListener("click",()=>{
+        const ok=k===item.lang; ch.querySelectorAll("button").forEach(x=>x.disabled=true);
+        b.classList.add(ok?"correct":"wrong"); if(!ok){ const c=[...ch.querySelectorAll("button")][langs.indexOf(item.lang)]; if(c) c.classList.add("correct"); }
+        const pts=ok?per:0; prog.earned+=pts; prog.log.push({n:item.n,ok});
+        if(ok){ state.streak++; award(pts+(state.streak>=3?2:0),state.streak>=3?"points (streak)":"points"); } else state.streak=0;
+        state.answers[id]=prog; save();
+        area.appendChild(h(`<div class="feedback ${ok?"good":"bad"}">${ok?"Correct.":"Not quite."} <span class="chip" style="background:${colorOf(item.lang)}22;color:${colorOf(item.lang)}">${esc(labelOf(item.lang))}</span> ${item.why||""}</div>`));
+        const next=h(`<button class="primary" type="button" style="margin-top:10px">${prog.index+1<deck.length?"Next name":"Finish"}</button>`);
+        next.addEventListener("click",()=>{ prog.index++; state.answers[id]=prog; save(); render(); });
+        area.appendChild(next);
+      });
+      ch.appendChild(b);
+    });
+    area.appendChild(ch);
+  }
+  render();
+};
+
+TASKS.click=(container,{id,points,title,text,layer,test,success,fail,banner:bannerText})=>{
+  const card=h(`<div class="task"><span class="pts">${points} pts</span><h3>${title}</h3><p>${text||""}</p><div class="feedback" hidden></div></div>`);
+  const f=card.querySelector(".feedback"); container.appendChild(card); const cfg=map.cfg[layer];
+  if(taskDone(id)){ fb(f,true,"Done. "+(state.answers[id]||"")); return; }
+  if(map.failed||map.unavailable[layer]){ fb(f,false,"The map layer is not available, so this task is skipped."); state.tasks[id]=true; save(); return; }
+  if(!map.ready){ fb(f,null,"Waiting for the map to load…"); return; }
+  banner(bannerText||`<b>Map task:</b> ${title}`);
+  map.clickHandler=async(ev)=>{
+    const L=map.layers[layer]; if(!L) return;
+    const hit=await map.view.hitTest(ev,{include:L});
+    const g=hit.results.find(r=>r.graphic&&r.graphic.attributes&&nameOf(r.graphic.attributes));
+    if(!g) return; const a=g.graphic.attributes; const ctx={name:nameOf(a),cls:clsOf(a,cfg),value:valueOf(a,cfg),attrs:a};
+    if(!test||test(ctx)){ const msg=success?success(ctx):`<b>${esc(ctx.name)}</b>`; fb(f,true,msg); state.answers[id]=msg.replace(/<[^>]+>/g,""); markTask(id,points,"points"); banner(""); map.clickHandler=null; }
+    else fb(f,false,fail?fail(ctx):`${esc(ctx.name)} does not fit. Try again.`);
+  };
+};
+
+TASKS.notes=(container,{id,points,noteIds,title,text})=>{
+  const card=h(`<div class="task"><span class="pts">${points} pts</span><h3>${title}</h3><p>${text||""}</p><ul class="steps"></ul><div class="feedback" hidden></div></div>`);
+  const ul=card.querySelector(".steps"), f=card.querySelector(".feedback"); const opened=state.answers[id]||{};
+  function draw(){ ul.innerHTML=""; noteIds.forEach(n=>{ const note=(A.notes||[]).find(x=>x.id===n)||{title:n}; ul.appendChild(h(`<li class="${opened[n]?"done":"active"}">Open the <b>${esc(note.title)}</b> note${opened[n]?" — read":""}</li>`)); }); }
+  draw(); container.appendChild(card);
+  if(taskDone(id)){ fb(f,true,noteIds.every(n=>opened[n])?"Done. Notes read.":"Done (map task skipped)."); return; }
+  if(map.failed){ fb(f,false,"The map is not available, so this task is skipped."); state.tasks[id]=true; save(); return; }
+  if(!map.ready){ fb(f,null,"Waiting for the map to load…"); return; }
+  banner("<b>Click the white square notes</b> on the map to read them.");
+  map.onNoteOpen=(nid)=>{
+    if(!noteIds.includes(nid)||opened[nid]) return;
+    opened[nid]=true; state.answers[id]=opened; save(); draw(); award(Math.floor(points/noteIds.length),"points");
+    if(noteIds.every(n=>opened[n])){ state.tasks[id]=true; save(); fb(f,true,"Done. Notes read."); banner(""); updateFinishBlock(); renderProgress(); renderBadges(); }
+  };
+};
+
+TASKS.button=(container,{id,points,label,callout,bookmark,layersOn,layersOff})=>{
+  if(callout) container.appendChild(h(`<div class="callout">${callout}</div>`));
+  const row=h(`<div class="row" style="margin:${callout?"-4px":"0"} 0 14px"><button class="secondary" type="button">${label}</button></div>`);
+  row.querySelector("button").addEventListener("click",()=>{ if(bookmark) goBookmark(bookmark); (layersOff||[]).forEach(k=>setLayer(k,false)); (layersOn||[]).forEach(k=>setLayer(k,true)); if(id) markTask(id,points||0,"points"); });
+  container.appendChild(row);
+  if(id&&map.failed&&!taskDone(id)){ state.tasks[id]=true; save(); }
+};
+
+TASKS.custom=(container,t)=>{ t.render(container,api,t); };
+
+/* ---------- sections ---------- */
+function renderMission(){
+  renderProgress(); renderBadges();
+  if(mode==="explore") return;
+  missionEl.innerHTML=""; clearGame(); toggleMeasure(false);
+  const sec=SECTIONS.find(s=>s.id===state.mission)||SECTIONS[0]; state.mission=sec.id;
+  const c=missionEl;
+  c.appendChild(h(`<h2>${esc(sec.title)}</h2>`));
+  if(sec.question) c.appendChild(h(`<p class="question-head">${sec.question}</p>`));
+  if(sec.intro) c.appendChild(h(`<div>${sec.intro}</div>`));
+  if(sec.layers) allLayers(false), sec.layers.forEach(k=>setLayer(k,true));
+  if(sec.bookmark) goBookmark(sec.bookmark); else if(sec.goTo) goTo(sec.goTo);
+  sec.tasks.forEach(t=>{ const fn=TASKS[t.type]; if(!fn){ console.warn("Unknown task type",t.type); return; } fn(c,t); });
+  const idx=ORDER.indexOf(sec.id);
+  finishBlock(c,sec.id,ORDER[idx+1]||null,sectionTaskIds(sec.id));
+  if(!ORDER[idx+1]&&sectionTaskIds(sec.id).every(taskDone)) summaryBox(c);
+  missionEl.scrollTop=0;
+}
+function finishBlock(container,missionId,nextId,requiredTasks){
+  missionEl._finish={missionId,nextId,requiredTasks};
+  container.appendChild(h(`<div class="task" id="finishBlock"></div>`)); updateFinishBlock();
+}
+function updateFinishBlock(){
+  const fk=missionEl._finish, wrap=$("finishBlock"); if(!fk||!wrap) return;
+  const {missionId,nextId,requiredTasks}=fk; const allDone=requiredTasks.every(taskDone);
+  wrap.style.borderColor=allDone?"var(--ok)":"var(--rule)";
+  wrap.innerHTML=`<h3>${allDone?"Section complete":"Finish every task to unlock the next section"}</h3><p class="hint">${requiredTasks.filter(taskDone).length} of ${requiredTasks.length} tasks done.</p><div class="row"></div>`;
+  if(allDone){
+    earnBadge(missionId);
+    if(nextId){ const b=h(`<button class="primary" type="button">Continue to ${esc(TITLES[nextId])}</button>`); b.addEventListener("click",()=>{state.mission=nextId;save();renderMission();}); wrap.querySelector(".row").appendChild(b); }
+  }
+}
+function summaryBox(c){
+  const rows=(typeof A.summary==="function"?A.summary(state):[]).concat([["Score",state.score+" points"],["Badges",`${state.badges.length} of ${BADGES.length}`]]);
+  const s=h(`<div class="summary-box"><h3 style="font-family:var(--serif);margin:0 0 8px">${esc(A.summaryTitle||"Your field notes")}</h3><dl>${rows.map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
+    <div class="row" style="margin-top:12px"><button class="primary" type="button" id="dl">Download my answers</button><button class="secondary" type="button" id="cp">Copy to clipboard</button></div></div>`);
+  c.appendChild(s);
+  s.querySelector("#dl").addEventListener("click",()=>{ const blob=new Blob([buildReport()],{type:"text/plain"}); const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=(A.slug||"geoinquiry")+"-answers.txt"; a.click(); });
+  s.querySelector("#cp").addEventListener("click",()=>{ navigator.clipboard.writeText(buildReport()).then(()=>toast("Copied")).catch(()=>toast("Copy failed; use Download")); });
+}
+function buildReport(){
+  const a=state.answers, L=[];
+  L.push(`${A.title} — student answers`); L.push("Submitted: "+new Date().toLocaleString());
+  L.push("Score: "+state.score+" | Badges: "+state.badges.map(b=>BADGES.find(x=>x.id===b).name).join(", ")); L.push("");
+  SECTIONS.forEach(sec=>{
+    L.push(`== ${sec.title} ==`);
+    sec.tasks.forEach(t=>{
+      if(!t.id||a[t.id]==null) return; const v=a[t.id]; const lbl=(t.question||t.title||t.label||t.id).replace(/<[^>]+>/g,"");
+      if(t.type==="detective") L.push(`${lbl}: ${v.earned} pts; ${v.log.map(x=>x.n+(x.ok?" ✓":" ✗")).join(", ")}`);
+      else if(t.type==="free") L.push(`${lbl}: ${v.option?v.option+" — ":""}${v.text}`);
+      else if(t.type==="notes") L.push(`${lbl}: ${Object.keys(v).join(", ")}`);
+      else if(t.type==="order") L.push(`${lbl}: order submitted ${v.map(x=>x+1).join(",")}`);
+      else if(Array.isArray(v)) L.push(`${lbl}: ${v.join(" | ")}`);
+      else L.push(`${lbl}: ${v}`);
+    });
+    L.push("");
+  });
+  return L.join("\n");
+}
+
+/* ---------- modes ---------- */
+let mode="mission";
+function setMode(next){
+  if(next===mode) return; mode=next;
+  document.body.classList.toggle("mode-explore",mode==="explore");
+  $("modeMission").setAttribute("aria-pressed",String(mode==="mission"));
+  $("modeExplore").setAttribute("aria-pressed",String(mode==="explore"));
+  if(mode==="explore"){ clearGame(); toggleMeasure(false); allLayers(true); if(typeof A.onExplore==="function") A.onExplore(api); }
+  else renderMission();
+  if(map.ready&&map.view) setTimeout(()=>{ try{ map.view.resize(); }catch(e){} },50);
+}
+$("modeMission").addEventListener("click",()=>setMode("mission"));
+$("modeExplore").addEventListener("click",()=>setMode("explore"));
+
+/* ---------- modals (focus-trapped) ---------- */
+const modalBack=$("modalBack"), modalBody=$("modalBody"); let lastFocus=null;
+function openModal(html){
+  modalBody.innerHTML=`<button class="secondary close" type="button">Close</button>`+html;
+  const h2=modalBody.querySelector("h2"); if(h2){ h2.id="modalTitle"; modalBack.setAttribute("aria-labelledby","modalTitle"); }
+  lastFocus=document.activeElement; modalBack.classList.add("show");
+  document.querySelector("header").inert=true; document.querySelector("main").inert=true;
+  modalBody.querySelector(".close").focus();
+}
+function closeModal(){ modalBack.classList.remove("show"); document.querySelector("header").inert=false; document.querySelector("main").inert=false; if(lastFocus&&lastFocus.focus) lastFocus.focus(); }
+modalBack.addEventListener("click",e=>{ if(e.target===modalBack||e.target.classList.contains("close")) closeModal(); });
+document.addEventListener("keydown",e=>{
+  if(!modalBack.classList.contains("show")) return;
+  if(e.key==="Escape") closeModal();
+  if(e.key==="Tab"){ const f=[...modalBody.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')].filter(x=>!x.disabled); if(!f.length) return; const first=f[0], last=f[f.length-1]; if(e.shiftKey&&document.activeElement===first){ last.focus(); e.preventDefault(); } else if(!e.shiftKey&&document.activeElement===last){ first.focus(); e.preventDefault(); } }
+});
+const FOOTER=`
+  <div class="modal-footer">
+  <p class="footer-left"><a href="https://trbaker.github.io/geoinquiries" target="_blank" rel="noopener">GeoInquiries Lab</a></p>
+  <p class="footer-left">Designed by <a href="https://tbaker.com" target="_blank" rel="noopener">Tom Baker</a></p>
+  <nav class="policy-links" aria-label="Policies"><a href="https://trbaker.github.io/geoinquiries/support/privacy.html" target="_blank" rel="noopener">Privacy</a><a href="https://trbaker.github.io/geoinquiries/support/accessibility.html" target="_blank" rel="noopener">Accessibility</a><a href="https://trbaker.github.io/geoinquiries/support/termsofuse.html" target="_blank" rel="noopener">Terms of use</a></nav>
+  <p class="cc-badge"><a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="license noopener"><img src="https://mirrors.creativecommons.org/presskit/buttons/88x31/svg/by-nc-sa.svg" alt="Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International license" width="88" height="31" onerror="this.replaceWith(Object.assign(document.createElement('b'),{textContent:'CC BY-NC-SA 4.0'}))"></a></p>
+  </div>`;
+function layerTable(){
+  return `<table><tr><th>Layer</th><th>Source</th><th>Notes</th></tr>
+    <tr><td>Basemap</td><td>Esri "${esc(MAPCFG.basemap)}"</td><td>Loaded through the ArcGIS Maps SDK for JavaScript 4.30.</td></tr>
+    ${LAYERS.map(l=>`<tr><td>${esc(l.title)}</td><td>${l.url?`<code>${esc(l.url)}</code>`:"Built into this app"}</td><td>${l.sourceNote||""}${l.url&&l.features?" Falls back to a built-in substitute layer if the service is unavailable.":""}</td></tr>`).join("")}
+  </table>`;
+}
+const DEFAULT_HELP=`<h2>How to play</h2>
+  <p>You work through ${ORDER.length} sections in the same order as the GeoInquiry lesson: ${SECTIONS.map(s=>esc(s.title)).join(", ")}. Each section unlocks the next once every task is done. Earn points for correct answers (a streak of three correct answers adds a bonus) and a badge for each section.</p>
+  <h3>Map controls</h3>
+  <ul>
+    <li>The app has two modes. GeoInquiry mode (the default) walks you through the sections. Explore mode hides the GeoInquiry panel and scoring and turns on every layer so you can use the map freely; switch with the GeoInquiry / Explore buttons in the header.</li>
+    ${BOOKMARKS.length?"<li>Bookmarks (top right of the map) jump to the places named in the lesson.</li>":""}
+    <li>The Layers list (top right) turns map layers on and off; the Legend (bottom left) explains the symbols. Both can be hidden.</li>
+    <li>Click any feature on the map to open its details.${MAPCFG.measure?" Use the ruler button to measure distance: click a start point, then double-click to finish.":""}</li>
+    <li>Your progress saves in this browser. Use Reset to start over.</li>
+  </ul>`;
+$("btnHelp").addEventListener("click",()=>openModal(A.help||DEFAULT_HELP));
+$("btnSources").addEventListener("click",()=>openModal((A.sources||"<h2>Sources and data</h2><h3>Map layers</h3>{{LAYER_TABLE}}").replace("{{LAYER_TABLE}}",layerTable())));
+$("btnTeacher").addEventListener("click",()=>openModal(`<h2>Teacher notes</h2><p><a href="https://esriurl.com/geoinquiries" target="_blank" rel="noopener">GeoInquiries home</a></p>`+(A.teacher||"")+FOOTER));
+$("btnReset").addEventListener("click",()=>{ if(!confirm("Reset all progress and start over?")) return; state=fresh(); save(); if(mode==="explore") setMode("mission"); else renderMission(); });
+
+/* ---------- public api for custom tasks / hooks ---------- */
+const api={A,state,save,award,markTask,taskDone,toast,h,fb,esc,banner,goBookmark,goTo,setLayer,layerOn,map,milesBetween,nameOf,clsOf,valueOf,classify,colorOf,labelOf,PALETTE,renderMission,updateFinishBlock,renderLegend,openModal};
+window.GeoInquiry=api;
+
+/* ---------- boot ---------- */
+renderBadges(); renderProgress(); wireMapTools(); renderLayerList(); renderMission(); initMap();
+})();
+
+</script>
+</body>
+</html>
