@@ -175,6 +175,12 @@ input[type=number],input[type=text],textarea,select.answer{font:inherit;padding:
 input[type=number]{width:120px}
 textarea{min-height:130px;resize:vertical}
 .hint{font-size:.9rem;color:var(--ink-soft)}
+.todo-list{margin:4px 0 12px;padding-left:20px}
+.todo-list li{margin:3px 0}
+.todo-link{background:none;border:0;padding:0;font:inherit;text-align:left;color:#2E5E9E;text-decoration:underline;cursor:pointer}
+.todo-link:hover{color:var(--accent)}
+.task-flash{outline:3px solid var(--brass);outline-offset:3px;border-radius:8px;transition:outline-color .3s}
+@media (prefers-reduced-motion: reduce){ .task-flash{transition:none} }
 .chip{display:inline-block;padding:2px 9px;border-radius:12px;font-size:.8rem;font-weight:600;background:#EDEFEA;color:var(--ink)}
 .name-card{border-left:4px solid var(--brass);padding:10px 14px;background:#FBFAF6;margin-top:10px}
 .name-card h4{font-family:var(--serif);margin:0 0 4px;font-size:1.1rem}
@@ -613,7 +619,7 @@ function propertiesTask(container,api,t){
     out.textContent=rng.value;
     mapReady.then(()=>{ const L=casesLayer(api); if(L){ L.blendMode=sel.value; L.opacity=1-(+rng.value/100); } });
     if(api.taskDone(t.id)) return;
-    if(!api.taskDone("expStyle")){ api.fb(f,null,"Finish the Styles task above (heat map with Deaths) first, then set Blending and Transparency."); return; }
+    if(!api.taskDone("expStyle")){ api.fb(f,null,"First finish styling the Cholera Cases layer above (a heat map using Deaths), then set Blending and Transparency."); return; }
     if(sel.value==="multiply"&&+rng.value===25){ api.markTask(t.id,t.points,"points"); api.fb(f,true,"Blending is Multiply and transparency is 25%. Snow's streets and hash marks now show through the heat map."); }
     else api.fb(f,null,`Blending: ${sel.options[sel.selectedIndex].text}, transparency ${rng.value}%. Set Blending to Multiply and Transparency to 25%.`);
   }
@@ -695,7 +701,7 @@ const SECTIONS=[
    {type:"button",id:"acqCases",points:5,label:"Turn on Cholera Cases",layersOn:["cases"],
     callout:"<b>Layers:</b> Turn on <b>Cholera Cases</b>. Its points sit on the same addresses as Snow's hash marks, but these points are interactive."},
    {type:"custom",id:"acqClick",points:10,title:"Open a pop-up",text:"Click any red Cholera Cases point. What does its pop-up tell you?",render:caseClickTask},
-   {type:"custom",id:"acqTable",points:10,title:"Show the attribute table",text:"The attribute table lists every Cholera Cases record. Sort the <b>Deaths</b> column from high to low.",render:tableTask},
+   {type:"custom",id:"acqTable",points:10,title:"Sort the attribute table",text:"This table lists every Cholera Cases record. Sort the <b>Deaths</b> column from high to low.",render:tableTask},
    {type:"mcq",id:"acqMost",points:10,question:"With the table sorted by Deaths (high to low), which address recorded the most deaths?",
     choices:["45 Broadwick Street","5 Greens Court","1 Kingly Court","29 Saint Annes Court"],correct:0,
     explain:"45 Broadwick Street recorded 18 deaths, twice as many as any other address. Next came 5 Greens Court (9), then 6 Berwick Street and 1 Kingly Court (8 each). The data uses today's street names: Broad Street is now Broadwick Street."},
@@ -709,11 +715,11 @@ const SECTIONS=[
   intro:`<p>Hundreds of overlapping points are hard to read. A heat map turns them into a smooth surface that shows where deaths were most concentrated.</p>`,
   tasks:[
    {type:"custom",render:(c,api)=>restoreStyle(api,"explore")},
-   {type:"custom",id:"expStyle",points:15,title:"Style the Cholera Cases layer",text:"Use the Styles pane: add the <b>Deaths</b> field so each address counts by its number of deaths, try the size style, then choose <b>Heat map</b> and select <b>Done</b>.",render:stylesTask},
+   {type:"custom",id:"expStyle",points:15,title:"Style the Cholera Cases layer",text:"Add the <b>Deaths</b> field so each address counts by its number of deaths. Try the size style, then choose <b>Heat map</b> and select <b>Done</b>.",render:stylesTask},
    {type:"mcq",id:"expColors",points:10,question:"On the heat map, what does the brightest yellow area show?",
     choices:["The single address with the most deaths","The densest concentration of deaths, counting how close the cases are and how many deaths each had","The locations of the water pumps","Where Snow lived"],correct:1,
     explain:"Purple and red mark lower densities; yellow marks the densest concentration of deaths. Because the style uses the Deaths field, an address with 18 deaths counts far more than an address with one."},
-   {type:"custom",id:"expProps",points:10,title:"Let Snow's map show through",text:"In the Properties pane, set <b>Blending</b> to <b>Multiply</b> (under Darken) and <b>Transparency</b> to <b>25%</b>.",render:propertiesTask},
+   {type:"custom",id:"expProps",points:10,title:"Let Snow's map show through",text:"Set <b>Blending</b> to <b>Multiply</b> and <b>Transparency</b> to <b>25%</b>.",render:propertiesTask},
    {type:"mcq",id:"expBlend",points:10,question:"Why change the heat map's blending to Multiply?",
     choices:["It deletes Snow's hash marks","It mixes the heat colours with Snow's map, so his streets and hash marks stay visible underneath","It makes the heat map cover a bigger area","It counts each death twice"],correct:1,
     explain:"Multiply darkens the colours where the layers overlap instead of covering them, so you can read Snow's original map and the heat map together."}
@@ -1328,7 +1334,7 @@ function renderMission(){
   if(sec.intro) c.appendChild(h(`<div>${sec.intro}</div>`));
   if(sec.layers) allLayers(false), sec.layers.forEach(k=>setLayer(k,true));
   if(sec.bookmark) goBookmark(sec.bookmark); else if(sec.goTo) goTo(sec.goTo);
-  sec.tasks.forEach(t=>{ const fn=TASKS[t.type]; if(!fn){ console.warn("Unknown task type",t.type); return; } fn(c,t); });
+  sec.tasks.forEach(t=>{ const fn=TASKS[t.type]; if(!fn){ console.warn("Unknown task type",t.type); return; } const n=c.children.length; fn(c,t); if(t.id&&c.children[n]) c.children[n].dataset.task=t.id; });
   const idx=ORDER.indexOf(sec.id);
   finishBlock(c,sec.id,ORDER[idx+1]||null,sectionTaskIds(sec.id));
   if(!ORDER[idx+1]&&sectionTaskIds(sec.id).every(taskDone)) summaryBox(c);
@@ -1338,11 +1344,32 @@ function finishBlock(container,missionId,nextId,requiredTasks){
   missionEl._finish={missionId,nextId,requiredTasks};
   container.appendChild(h(`<div class="task" id="finishBlock"></div>`)); updateFinishBlock();
 }
+// A short, plain-text name for a task, used in the "Still to do" list
+function taskLabel(t){
+  const plain=(x)=>String(x||"").replace(/<[^>]+>/g,"").replace(/\s+/g," ").trim();
+  let s=t.type==="button"?`Select “${plain(t.label)}”`:(t.type==="mcq"||t.type==="multi")?plain(t.question):plain(t.title||t.label||t.question||t.id);
+  return s.length>100?s.slice(0,97).replace(/\s+\S*$/,"")+"…":s;
+}
+function goToTask(id){
+  const el=missionEl.querySelector(`[data-task="${CSS.escape(id)}"]`); if(!el) return;
+  const reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
+  el.scrollIntoView({behavior:reduce?"auto":"smooth",block:"center"});
+  el.classList.remove("task-flash"); void el.offsetWidth; el.classList.add("task-flash"); setTimeout(()=>el.classList.remove("task-flash"),1800);
+  // the card itself, or the button row right after a callout, holds the first control
+  const scope=el.matches(".callout")&&el.nextElementSibling?el.nextElementSibling:el;
+  const ctl=scope.querySelector('button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled])');
+  if(ctl) ctl.focus({preventScroll:true});
+}
 function updateFinishBlock(){
   const fk=missionEl._finish, wrap=$("finishBlock"); if(!fk||!wrap) return;
   const {missionId,nextId,requiredTasks}=fk; const allDone=requiredTasks.every(taskDone);
+  const missing=requiredTasks.filter(id=>!taskDone(id)), sec=SECTIONS.find(s=>s.id===missionId);
   wrap.style.borderColor=allDone?"var(--ok)":"var(--rule)";
-  wrap.innerHTML=`<h3>${allDone?"Section complete":"Finish every task to unlock the next section"}</h3><p class="hint">${requiredTasks.filter(taskDone).length} of ${requiredTasks.length} tasks done.</p><div class="row"></div>`;
+  wrap.innerHTML=`<h3>${allDone?"Section complete":nextId?"Finish every task to unlock the next section":"Finish every task to complete the GeoInquiry"}</h3><p class="hint">${requiredTasks.length-missing.length} of ${requiredTasks.length} tasks done.${missing.length?" Still to do:":""}</p>${missing.length?`<ul class="todo-list"></ul>`:""}<div class="row"></div>`;
+  if(missing.length){
+    const ul=wrap.querySelector(".todo-list");
+    missing.forEach(id=>{ const t=sec.tasks.find(x=>x.id===id)||{id}; const li=h(`<li><button type="button" class="todo-link">${esc(taskLabel(t))}</button></li>`); li.querySelector("button").addEventListener("click",()=>goToTask(id)); ul.appendChild(li); });
+  }
   if(allDone){
     earnBadge(missionId);
     if(nextId){ const b=h(`<button class="primary" type="button">Continue to ${esc(TITLES[nextId])}</button>`); b.addEventListener("click",()=>{state.mission=nextId;save();renderMission();}); wrap.querySelector(".row").appendChild(b); }
