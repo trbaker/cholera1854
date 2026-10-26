@@ -8,6 +8,17 @@
    ===================================================================== */
 (function(){
 
+/* ---------- page credit (bottom of the page; activity-only, the template is unchanged) ---------- */
+(function addCredit(){
+  if(typeof document==="undefined"||document.getElementById("pageCredit")) return;   // build.js evaluates this file without a DOM
+  const f=document.createElement("footer");
+  f.id="pageCredit";
+  f.style.cssText="flex:0 0 auto;padding:5px 16px;text-align:center;font-size:.85rem;color:#fff;background:var(--header);border-top:3px solid var(--header-rule)";
+  f.innerHTML='Designed by <a href="https://tbaker.com" target="_blank" rel="noopener" style="color:#fff;text-decoration:underline">Tom Baker</a>';
+  const main=document.querySelector("main");
+  if(main) main.after(f); else document.body.appendChild(f);
+})();
+
 /* ---------- data ---------- */
 // Built-in copy of the Cholera Cases service (322 records, 578 deaths), used only if the live service fails.
 // [Deaths, Address, lon, lat] — verified against the live layer (counts by Deaths value and every address with 5+ deaths).
